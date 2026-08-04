@@ -9,6 +9,7 @@ export default class PassageReference
 	startVerse: number;
 	endChapter: number;
 	endVerse: number;
+	verseSegments: VerseSegment[];
 	book: Book;
 	version: string;
 	format: PassageFormat;
@@ -22,6 +23,16 @@ export default class PassageReference
 		this.startVerse = chapterRef.startVerse;
 		this.endChapter = chapterRef.endChapter;
 		this.endVerse = chapterRef.endVerse;
+		this.verseSegments = chapterRef.verseSegments ?? [];
+		if (
+			this.verseSegments.length === 0 &&
+			this.startChapter === this.endChapter &&
+			this.endVerse !== -1
+		) {
+			this.verseSegments = [
+				{ startVerse: this.startVerse, endVerse: this.endVerse },
+			];
+		}
 		this.book = book;
 		this.version = passageOptions.version;
 		this.format = passageOptions.format;
@@ -36,7 +47,8 @@ export default class PassageReference
 		const match = text.match(this.regExp);
 		if (!match) return null;
 
-		let chapterRef = this.parseMultiChapterRef(match[2]);
+		let chapterRef = this.parseVerseSelection(match[2]);
+		if (!chapterRef) chapterRef = this.parseMultiChapterRef(match[2]);
 		if (!chapterRef) chapterRef = this.parseMultiChapterVerseRef(match[2]);
 		if (!chapterRef) chapterRef = this.parseMultiVerseRef(match[2]);
 		if (!chapterRef) return null;
@@ -61,7 +73,7 @@ export default class PassageReference
 			.map((b) => `${b.name}|${b.aliases.join('|')}`)
 			.join('|');
 		regExpString +=
-			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
+			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?|\\d{1,3}:\\d{1,3}(?:,\\d{1,3})+)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
 
 		return new RegExp(regExpString, 'i');
 	}
@@ -76,6 +88,18 @@ export default class PassageReference
 				`${this.book.name} ${this.startChapter}-` +
 				`${this.endChapter} - ${this.version}`
 			);
+		}
+
+		// noncontiguous verse selection
+		if (this.verseSegments.length > 1) {
+			const selection = this.verseSegments
+				.map(({ startVerse, endVerse }) =>
+					startVerse === endVerse
+						? `${startVerse}`
+						: `${startVerse}-${endVerse}`
+				)
+				.join(',');
+			return `${this.book.name} ${this.startChapter}:${selection} - ${this.version}`;
 		}
 
 		// multi-verse ref
@@ -95,6 +119,29 @@ export default class PassageReference
 		const a = `${this.startChapter}:${this.startVerse}`;
 		const b = `${this.endChapter}:${this.endVerse}`;
 		return `${this.book.name} ${a}-${b} - ${this.version}`;
+	}
+
+	/** Parses a comma-separated selection of individual verses in one chapter. */
+	private static parseVerseSelection(text: string): ChapterReference | null {
+		const match = text.match(/^(\d{1,3}):(\d{1,3}(?:,\d{1,3})+)$/);
+		if (!match) return null;
+
+		const chapter = +match[1];
+		const verses = [
+			...new Set(match[2].split(',').map((verse) => +verse.trim())),
+		].sort((a, b) => a - b);
+		const verseSegments = verses.map((verse) => ({
+			startVerse: verse,
+			endVerse: verse,
+		}));
+
+		return {
+			startChapter: chapter,
+			startVerse: verses[0],
+			endChapter: chapter,
+			endVerse: verses[verses.length - 1],
+			verseSegments,
+		};
 	}
 
 	/**
@@ -229,11 +276,17 @@ export enum PassageFormat {
 	Callout = 'callout',
 }
 
+export interface VerseSegment {
+	startVerse: number;
+	endVerse: number;
+}
+
 interface ChapterReference {
 	startChapter: number;
 	startVerse: number;
 	endChapter: number;
 	endVerse: number;
+	verseSegments?: VerseSegment[];
 }
 
 interface PassageOptions {
