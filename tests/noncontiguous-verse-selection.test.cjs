@@ -155,6 +155,58 @@ test('individual verses are ordered and included once', async () => {
 	);
 });
 
+test('verse ranges are sorted and merged with overlaps and adjacency', async () => {
+	const PassageReference = loadModule('src/passage-reference.ts');
+	const reference = PassageReference.parse(
+		'--gen1:3,1,2-3',
+		'WEB',
+		'paragraph'
+	);
+
+	assert.notEqual(reference, null);
+	assert.equal(reference.stringify(), 'Genesis 1:1-3 - WEB');
+	assert.deepEqual(
+		Array.from(reference.verseSegments, (segment) => ({ ...segment })),
+		[{ startVerse: 1, endVerse: 3 }]
+	);
+
+	const passageSuggest = createPassageSuggest(genesisOne);
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:3,1,2-3',
+	});
+	assert.equal(suggestions.length, 1);
+	assert.equal(suggestions[0].text, `${genesisOne}\n\n`);
+});
+
+test('noncontiguous normalized ranges remain visible in labels and output', async () => {
+	const fiveVerses = [
+		'<sup>1</sup> One.',
+		'<sup>2</sup> Two.',
+		'<sup>3</sup> Three.',
+		'<sup>4</sup> Four.',
+		'<sup>5</sup> Five.',
+	].join('\n');
+	const PassageReference = loadModule('src/passage-reference.ts');
+	const reference = PassageReference.parse(
+		'-- Gen 1:5, 1 - 2, 4-5',
+		'WEB',
+		'paragraph'
+	);
+
+	assert.notEqual(reference, null);
+	assert.equal(reference.stringify(), 'Genesis 1:1-2,4-5 - WEB');
+
+	const passageSuggest = createPassageSuggest(fiveVerses);
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '-- Gen 1:5, 1 - 2, 4-5',
+	});
+	assert.equal(suggestions.length, 1);
+	assert.equal(
+		suggestions[0].text,
+		'<sup>1</sup> One.\n<sup>2</sup> Two.\n<sup>4</sup> Four.\n<sup>5</sup> Five.\n\n'
+	);
+});
+
 test('a missing selected verse rejects the complete reference', async () => {
 	const passageSuggest = createPassageSuggest(genesisOne);
 
@@ -165,9 +217,39 @@ test('a missing selected verse rejects the complete reference', async () => {
 	assert.equal(suggestions.length, 0);
 });
 
+test('a range containing a missing verse rejects the complete reference', async () => {
+	const passageSuggest = createPassageSuggest(genesisOne);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:1-999,2',
+	});
+
+	assert.equal(suggestions.length, 0);
+});
+
+test('a range with a missing verse between its endpoints is rejected', async () => {
+	const passageSuggest = createPassageSuggest(
+		['<sup>1</sup> One.', '<sup>3</sup> Three.'].join('\n')
+	);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:1-3,3',
+	});
+
+	assert.equal(suggestions.length, 0);
+});
+
 test('malformed and cross-chapter selections are rejected', () => {
 	const PassageReference = loadModule('src/passage-reference.ts');
-	const invalidReferences = ['--gen1:1,', '--gen1:1,,3', '--gen1:1,2:3'];
+	const invalidReferences = [
+		'--gen1:1,',
+		'--gen1:1,,3',
+		'--gen1:1,2:3',
+		'--gen1:5-3,8',
+		'--gen1:1,  3',
+		'--gen1:1 -  3,5',
+		'--gen1,3',
+	];
 
 	for (const input of invalidReferences) {
 		assert.equal(

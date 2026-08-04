@@ -72,8 +72,13 @@ export default class PassageReference
 		regExpString += books
 			.map((b) => `${b.name}|${b.aliases.join('|')}`)
 			.join('|');
+		const selectionItem = '\\d{1,3}(?: ?\\- ?\\d{1,3})?';
 		regExpString +=
-			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?|\\d{1,3}:\\d{1,3}(?:,\\d{1,3})+)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
+			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?|\\d{1,3}:' +
+			selectionItem +
+			'(?:, ?' +
+			selectionItem +
+			')+)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
 
 		return new RegExp(regExpString, 'i');
 	}
@@ -121,26 +126,39 @@ export default class PassageReference
 		return `${this.book.name} ${a}-${b} - ${this.version}`;
 	}
 
-	/** Parses a comma-separated selection of individual verses in one chapter. */
+	/** Parses and normalizes a comma-separated verse selection in one chapter. */
 	private static parseVerseSelection(text: string): ChapterReference | null {
-		const match = text.match(/^(\d{1,3}):(\d{1,3}(?:,\d{1,3})+)$/);
+		const match = text.match(/^(\d{1,3}):(.+,.+)$/);
 		if (!match) return null;
 
-		const chapter = +match[1];
-		const verses = [
-			...new Set(match[2].split(',').map((verse) => +verse.trim())),
-		].sort((a, b) => a - b);
-		const verseSegments = verses.map((verse) => ({
-			startVerse: verse,
-			endVerse: verse,
-		}));
+		const verseSegments: VerseSegment[] = [];
+		for (const item of match[2].split(',')) {
+			const itemMatch = item.trim().match(/^(\d{1,3})(?: ?- ?(\d{1,3}))?$/);
+			if (!itemMatch) return null;
+
+			const startVerse = +itemMatch[1];
+			const endVerse = itemMatch[2] ? +itemMatch[2] : startVerse;
+			if (startVerse > endVerse) return null;
+			verseSegments.push({ startVerse, endVerse });
+		}
+
+		verseSegments.sort((a, b) => a.startVerse - b.startVerse);
+		const normalizedSegments: VerseSegment[] = [];
+		for (const segment of verseSegments) {
+			const previous = normalizedSegments[normalizedSegments.length - 1];
+			if (previous && segment.startVerse <= previous.endVerse + 1) {
+				previous.endVerse = Math.max(previous.endVerse, segment.endVerse);
+			} else {
+				normalizedSegments.push({ ...segment });
+			}
+		}
 
 		return {
-			startChapter: chapter,
-			startVerse: verses[0],
-			endChapter: chapter,
-			endVerse: verses[verses.length - 1],
-			verseSegments,
+			startChapter: +match[1],
+			startVerse: normalizedSegments[0].startVerse,
+			endChapter: +match[1],
+			endVerse: normalizedSegments[normalizedSegments.length - 1].endVerse,
+			verseSegments: normalizedSegments,
 		};
 	}
 

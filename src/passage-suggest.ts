@@ -219,6 +219,13 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		startVerse?: number,
 		endVerse?: number
 	): string | null {
+		if (endVerse !== undefined && endVerse !== -1) {
+			const firstVerseToValidate = startVerse ?? endVerse;
+			for (let verse = firstVerseToValidate; verse <= endVerse; verse++) {
+				if (!this.getTextFromStartVerse(text, verse)) return null;
+			}
+		}
+
 		let selectedText = text;
 		if (startVerse !== undefined) {
 			const textFromVerse = this.getTextFromStartVerse(
