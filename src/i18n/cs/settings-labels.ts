@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -43,6 +43,15 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Náhled celé pasáže',
 				description:
 					'Zda se v náhledu má zobrazit celá pasáž, a ne jen její úryvek.',
+			},
+			omissionMarker: {
+				name: 'Značka vynechání',
+				description:
+					'Značka vložená mezi vybrané úseky, kde byly vynechány verše.',
+				options: {
+					[OmissionMarker.None]: 'Žádná',
+					[OmissionMarker.Ellipsis]: 'Výpustka',
+				},
 			},
 		},
 	},

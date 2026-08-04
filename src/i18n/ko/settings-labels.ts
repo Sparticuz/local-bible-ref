@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -40,7 +40,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			fullPreview: {
 				name: '전체 구절 미리보기',
-				description: '미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
+				description:
+					'미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
+			},
+			omissionMarker: {
+				name: '생략 표시',
+				description: '선택한 구간 사이에서 생략된 절을 나타내는 표시입니다.',
+				options: {
+					[OmissionMarker.None]: '없음',
+					[OmissionMarker.Ellipsis]: '줄임표',
+				},
 			},
 		},
 	},
@@ -80,8 +89,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			collapsible: {
 				name: '접을 수 있는',
-				description:
-					'해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
+				description: '해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
 			},
 		},
 	},

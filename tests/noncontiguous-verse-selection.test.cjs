@@ -4,7 +4,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 const { buildSync } = require('esbuild');
 
-function loadModule(entryPoint, obsidian = {}) {
+function loadExports(entryPoint, obsidian = {}) {
 	const result = buildSync({
 		entryPoints: [entryPoint],
 		bundle: true,
@@ -31,10 +31,39 @@ function loadModule(entryPoint, obsidian = {}) {
 	};
 
 	vm.runInNewContext(result.outputFiles[0].text, context);
-	return bundledModule.exports.default;
+	return bundledModule.exports;
 }
 
-function createPassageSuggest(chapterText, format = 'paragraph') {
+function loadModule(entryPoint, obsidian = {}) {
+	return loadExports(entryPoint, obsidian).default;
+}
+
+function createObsidianRuntime(overrides = {}) {
+	class ObsidianBase {
+		constructor(app) {
+			this.app = app;
+		}
+	}
+
+	return {
+		AbstractInputSuggest: ObsidianBase,
+		EditorSuggest: ObsidianBase,
+		Notice: class {},
+		Plugin: class {},
+		PluginSettingTab: ObsidianBase,
+		Setting: class {},
+		SettingGroup: class {},
+		TFolder: class {},
+		normalizePath: (path) => path,
+		...overrides,
+	};
+}
+
+function createPassageSuggest(
+	chapterText,
+	format = 'paragraph',
+	omissionMarker = 'none'
+) {
 	class TFolder {}
 	const PassageSuggest = loadModule('src/passage-suggest.ts', {
 		EditorSuggest: class {
@@ -62,6 +91,7 @@ function createPassageSuggest(chapterText, format = 'paragraph') {
 		defaultPassageFormat: format,
 		bibleFormat: 'localBibleRef',
 		fullPreview: false,
+		omissionMarker,
 		quote: {
 			includeReference: false,
 			referencePosition: 'end',
@@ -201,6 +231,47 @@ test('existing references retain their inserted output behavior', async () => {
 	}
 });
 
+test('ellipsis markers appear once per omitted span', async () => {
+	const fiveVerses = [
+		'<sup>1</sup> One.',
+		'<sup>2</sup> Two.',
+		'<sup>3</sup> Three.',
+		'<sup>4</sup> Four.',
+		'<sup>5</sup> Five.',
+	].join('\n');
+	const passageSuggest = createPassageSuggest(
+		fiveVerses,
+		'paragraph',
+		'ellipsis'
+	);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:1,3,5',
+	});
+
+	assert.equal(
+		suggestions[0].text,
+		'<sup>1</sup> One. … <sup>3</sup> Three. … <sup>5</sup> Five.\n\n'
+	);
+});
+
+test('ellipsis markers are not added between adjacent selections', async () => {
+	const passageSuggest = createPassageSuggest(
+		genesisOne,
+		'paragraph',
+		'ellipsis'
+	);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:1,2',
+	});
+
+	assert.equal(
+		suggestions[0].text,
+		'<sup>1</sup> In the beginning.\n<sup>2</sup> The earth was formless.\n\n'
+	);
+});
+
 test('verse selections retain each existing output format', async (t) => {
 	const expectedByFormat = {
 		manuscript: 'In the beginning. God said, “Let there be light.”\n\n',
@@ -215,6 +286,90 @@ test('verse selections retain each existing output format', async (t) => {
 	for (const [format, expected] of Object.entries(expectedByFormat)) {
 		await t.test(format, async () => {
 			const passageSuggest = createPassageSuggest(genesisOne, format);
+			const suggestions = await passageSuggest.getSuggestions({
+				query: '--gen1:1,3',
+			});
+
+			assert.equal(suggestions[0].text, expected);
+		});
+	}
+});
+
+test('omission marker labels are localized in every supported language', () => {
+	const { I18N } = loadExports('src/i18n/index.ts', createObsidianRuntime());
+
+	for (const language of ['CS', 'DE', 'EN', 'KO']) {
+		const control = I18N[language].SETTINGS.optional.controls.omissionMarker;
+		assert.ok(control.name, language);
+		assert.ok(control.description, language);
+		assert.ok(control.options.none, language);
+		assert.ok(control.options.ellipsis, language);
+	}
+});
+
+test('omission marker defaults safely and persists across reloads', async () => {
+	let storedSettings = {
+		biblesPath: 'Bibles',
+		defaultVersionShorthand: 'WEB',
+		defaultPassageFormat: 'paragraph',
+		bibleFormat: 'localBibleRef',
+		fullPreview: false,
+		quote: {
+			includeReference: true,
+			referencePosition: 'end',
+			linkToPassage: true,
+		},
+		callout: {
+			type: 'quote',
+			linkToPassage: true,
+			collapsible: true,
+		},
+	};
+
+	class Plugin {
+		async loadData() {
+			return storedSettings;
+		}
+
+		async saveData(settings) {
+			storedSettings = JSON.parse(JSON.stringify(settings));
+		}
+	}
+
+	const LocalBibleRefPlugin = loadModule(
+		'main.ts',
+		createObsidianRuntime({ Plugin })
+	);
+	const existingUserPlugin = new LocalBibleRefPlugin();
+	await existingUserPlugin.loadSettings();
+	assert.equal(existingUserPlugin.settings.omissionMarker, 'none');
+
+	existingUserPlugin.settings.omissionMarker = 'ellipsis';
+	await existingUserPlugin.saveSettings();
+
+	const reloadedPlugin = new LocalBibleRefPlugin();
+	await reloadedPlugin.loadSettings();
+	assert.equal(reloadedPlugin.settings.omissionMarker, 'ellipsis');
+});
+
+test('ellipsis markers preserve each output format', async (t) => {
+	const expectedByFormat = {
+		manuscript: 'In the beginning. … God said, “Let there be light.”\n\n',
+		paragraph:
+			'<sup>1</sup> In the beginning. … <sup>3</sup> God said, “Let there be light.”\n\n',
+		quote:
+			'> <sup>1</sup> In the beginning. … <sup>3</sup> God said, “Let there be light.”\n\n',
+		callout:
+			'> [!quote] Genesis 1:1,3 - WEB\n> <sup>1</sup> In the beginning. … <sup>3</sup> God said, “Let there be light.”\n\n',
+	};
+
+	for (const [format, expected] of Object.entries(expectedByFormat)) {
+		await t.test(format, async () => {
+			const passageSuggest = createPassageSuggest(
+				genesisOne,
+				format,
+				'ellipsis'
+			);
 			const suggestions = await passageSuggest.getSuggestions({
 				query: '--gen1:1,3',
 			});

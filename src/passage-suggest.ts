@@ -13,7 +13,10 @@ import {
 } from 'obsidian';
 import { BibleFormat } from './local-bible-ref-setting-tab';
 import PassageReference, { PassageFormat } from './passage-reference';
-import LocalBibleRefSettings, { QuoteReferencePosition } from './settings';
+import LocalBibleRefSettings, {
+	OmissionMarker,
+	QuoteReferencePosition,
+} from './settings';
 import { I18N } from './i18n';
 
 export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
@@ -102,17 +105,30 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		if (!texts) return [];
 
 		if (passageRef.verseSegments.length > 1) {
-			const selectedTexts: string[] = [];
-			for (const segment of passageRef.verseSegments) {
-				const selectedText = this.getTextForVerseRange(
+			let selectionText = '';
+			for (let i = 0; i < passageRef.verseSegments.length; i++) {
+				const segment = passageRef.verseSegments[i];
+				const segmentText = this.getTextForVerseRange(
 					texts[0],
 					segment.startVerse,
 					segment.endVerse
 				);
-				if (!selectedText) return [];
-				selectedTexts.push(selectedText);
+				if (!segmentText) return [];
+
+				if (i > 0) {
+					const previousSegment = passageRef.verseSegments[i - 1];
+					const hasOmittedVerse =
+						segment.startVerse > previousSegment.endVerse + 1;
+					selectionText +=
+						hasOmittedVerse &&
+						this.settings.omissionMarker === OmissionMarker.Ellipsis
+							? ' … '
+							: '\n';
+				}
+
+				selectionText += segmentText;
 			}
-			texts = [selectedTexts.join('\n')];
+			texts = [selectionText];
 		} else {
 			const lastIndex = texts.length - 1;
 			const firstText = this.getTextForVerseRange(
