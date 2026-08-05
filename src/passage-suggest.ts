@@ -115,18 +115,20 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				);
 				if (!segmentText) return [];
 
+				let usesEllipsis = false;
 				if (i > 0) {
 					const previousSegment = passageRef.verseSegments[i - 1];
 					const hasOmittedVerse =
 						segment.startVerse > previousSegment.endVerse + 1;
-					selectionText +=
+					usesEllipsis =
 						hasOmittedVerse &&
-						this.settings.omissionMarker === OmissionMarker.Ellipsis
-							? ' … '
-							: '\n';
+						this.settings.omissionMarker === OmissionMarker.Ellipsis;
+					selectionText += usesEllipsis ? ' … ' : '\n';
 				}
 
-				selectionText += segmentText;
+				selectionText += usesEllipsis
+					? segmentText.replace(/^(?:[>-] )+/, '')
+					: segmentText;
 			}
 			texts = [selectionText];
 		} else {
