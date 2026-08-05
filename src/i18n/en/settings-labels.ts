@@ -100,6 +100,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 		},
 	},
 
+	inlineFormat: {
+		name: 'Inline format',
+		controls: {
+			showVerseIndicators: {
+				name: 'Show verse indicators',
+				description: 'Whether to include verse numbers in inline passages.',
+			},
+		},
+	},
+
 	issues: {
 		before:
 			'If you find any issues with Local Bible Ref or have suggestions for improvements, please ',

@@ -67,6 +67,13 @@ export interface SettingsLabels {
 		};
 	};
 
+	inlineFormat: {
+		name: string;
+		controls: {
+			showVerseIndicators: Control;
+		};
+	};
+
 	issues: {
 		before: string;
 		link: string;

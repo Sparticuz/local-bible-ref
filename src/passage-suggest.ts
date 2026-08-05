@@ -446,6 +446,8 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				formatted = formatted.replace(/^(?:> |- )+/gm, '');
 				formatted = formatted.replace(/^\*\*\d{1,3}\*\* ?/gm, '');
 				formatted = formatted.replace(/[ \t]*\r?\n+[ \t]*/g, ' ');
+				if (!this.settings.inline.showVerseIndicators)
+					formatted = formatted.replace(/<sup>\d{1,3}<\/sup>\s*/g, '');
 				const sourceReference = this.generatePassageLink(passageRef, context);
 				formatted = `"${formatted}" (${sourceReference})`;
 				break;

@@ -98,6 +98,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 		},
 	},
 
+	inlineFormat: {
+		name: 'Formát v textu',
+		controls: {
+			showVerseIndicators: {
+				name: 'Zobrazit čísla veršů',
+				description: 'Zda se mají v pasážích v textu zobrazovat čísla veršů.',
+			},
+		},
+	},
+
 	issues: {
 		before:
 			'Pokud narazíte na nějaké problémy s Local Bible Ref nebo máte návrhy na vylepšení, ',

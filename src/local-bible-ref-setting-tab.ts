@@ -54,8 +54,14 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
-		const { required, optional, quoteFormat, calloutFormat, issues } =
-			this.settingsLabels;
+		const {
+			required,
+			optional,
+			quoteFormat,
+			calloutFormat,
+			inlineFormat,
+			issues,
+		} = this.settingsLabels;
 		containerEl.empty();
 
 		// required settings ---
@@ -325,6 +331,24 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 							.setValue(this.plugin.settings.callout.collapsible)
 							.onChange(async (value) => {
 								this.plugin.settings.callout.collapsible = value;
+								await this.plugin.saveSettings();
+							})
+					)
+			);
+
+		// inline format settings ---
+		new SettingGroup(containerEl)
+			.setHeading(inlineFormat.name)
+			.addSetting((setting) =>
+				setting
+					.setName(inlineFormat.controls.showVerseIndicators.name)
+					.setDesc(inlineFormat.controls.showVerseIndicators.description)
+					.setClass(this.settingClass)
+					.addToggle((toggle) =>
+						toggle
+							.setValue(this.plugin.settings.inline.showVerseIndicators)
+							.onChange(async (value) => {
+								this.plugin.settings.inline.showVerseIndicators = value;
 								await this.plugin.saveSettings();
 							})
 					)

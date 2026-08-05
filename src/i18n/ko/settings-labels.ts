@@ -95,6 +95,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 		},
 	},
 
+	inlineFormat: {
+		name: '인라인 형식',
+		controls: {
+			showVerseIndicators: {
+				name: '절 번호 표시',
+				description: '인라인 구절에 절 번호를 표시할지 여부입니다.',
+			},
+		},
+	},
+
 	issues: {
 		before:
 			'Local Bible Ref에 문제가 있거나 개선 사항에 대한 제안이 있는 경우, ',
