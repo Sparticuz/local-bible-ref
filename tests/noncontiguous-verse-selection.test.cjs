@@ -337,6 +337,36 @@ test('ellipsis markers appear once per omitted span', async () => {
 	);
 });
 
+test('ellipsis markers do not retain an inline blockquote marker', async () => {
+	const quotedVerses = [
+		'> <sup>1</sup> One,',
+		'> first continuation.',
+		'',
+		'> <sup>2</sup> Two,',
+		'> second continuation.',
+		'',
+		'> <sup>3</sup> Three,',
+		'> third continuation.',
+	].join('\n');
+	const passageSuggest = createPassageSuggest(
+		quotedVerses,
+		'callout',
+		'ellipsis'
+	);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--gen1:1,3',
+	});
+
+	assert.equal(
+		suggestions[0].text,
+		'> [!quote] Genesis 1:1,3 - WEB\n' +
+			'> >  <sup>1</sup> One,\n' +
+			'> > first continuation. … <sup>3</sup> Three,\n' +
+			'> > third continuation.\n\n'
+	);
+});
+
 test('ellipsis markers are not added between adjacent selections', async () => {
 	const passageSuggest = createPassageSuggest(
 		genesisOne,
