@@ -31,6 +31,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: '절',
 					[PassageFormat.Quote]: '인용하다',
 					[PassageFormat.Callout]: '호출',
+					[PassageFormat.Inline]: '인라인',
 				},
 			},
 			bibleFormat: {

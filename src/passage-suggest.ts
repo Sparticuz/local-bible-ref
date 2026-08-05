@@ -48,9 +48,10 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		editor: Editor,
 		_: TFile | null
 	): EditorSuggestTriggerInfo | null {
-		// line must start with '--'
-		const line = editor.getLine(cursor.line);
-		if (!line.startsWith('--')) return null;
+		const line = editor.getLine(cursor.line).slice(0, cursor.ch);
+		const match = line.match(PassageReference.regExp);
+		if (!match) return null;
+		const referenceStart = match.index ?? 0;
 
 		// if no settings, alert user
 		if (!this.settings.biblesPath) {
@@ -63,18 +64,14 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		// min ref length is 5 ('--ex1')
-		if (cursor.ch < 5) return null;
-
-		// must be a passage ref
-		const isPassage = PassageReference.regExp.test(line);
-		if (!isPassage) return null;
+		if (cursor.ch - referenceStart < 5) return null;
 
 		// trigger info
 		return {
 			end: cursor,
 			query: line,
 			start: {
-				ch: 0,
+				ch: referenceStart,
 				line: cursor.line,
 			},
 		};
@@ -375,6 +372,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				formatted += texts.join('\n\n').trim();
 				formatted = formatted.replace(/\n/gm, '\n> ');
 				formatted += '\n\n';
+				break;
+			}
+			case PassageFormat.Inline: {
+				formatted = texts.join('\n').trim();
+				formatted = formatted.replace(/^(?:> |- )+/gm, '');
+				formatted = formatted.replace(/^\*\*\d{1,3}\*\* ?/gm, '');
+				formatted = formatted.replace(/[ \t]*\r?\n+[ \t]*/g, ' ');
+				const sourceReference = this.generatePassageLink(passageRef, context);
+				formatted = `"${formatted}" (${sourceReference})`;
 				break;
 			}
 		}
