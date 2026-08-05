@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Abschnitt',
 					[PassageFormat.Quote]: 'Zitat',
 					[PassageFormat.Callout]: 'Callout',
+					[PassageFormat.Inline]: 'Inline',
 				},
 			},
 			bibleFormat: {

@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Odstavec',
 					[PassageFormat.Quote]: 'Citovat',
 					[PassageFormat.Callout]: 'Popisek',
+					[PassageFormat.Inline]: 'V textu',
 				},
 			},
 			bibleFormat: {

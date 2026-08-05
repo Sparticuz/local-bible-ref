@@ -56,10 +56,14 @@ export default class PassageReference
 		const book = this.getBook(match[1]);
 		if (!book) return null;
 
+		const precedingContent = text.slice(0, match.index).trim().length > 0;
+		const inferredFormat = precedingContent
+			? PassageFormat.Inline
+			: defaultPassageFormat;
 		const options = this.parseOptions(
 			match[3],
 			defaultVersionShorthand,
-			defaultPassageFormat
+			inferredFormat
 		);
 
 		return new PassageReference(chapterRef, book, options);
@@ -68,7 +72,7 @@ export default class PassageReference
 	/** Builds the passage matching regular expression. */
 	static get regExp(): RegExp {
 		const books = getBooksByLanguage();
-		let regExpString = '^\\-\\- ?(';
+		let regExpString = '\\-\\- ?(';
 		regExpString += books
 			.map((b) => `${b.name}|${b.aliases.join('|')}`)
 			.join('|');
@@ -263,6 +267,10 @@ export default class PassageReference
 				case 'callout':
 					options.format = PassageFormat.Callout;
 					break;
+				case 'i':
+				case 'inline':
+					options.format = PassageFormat.Inline;
+					break;
 				default:
 					options.version = option.toUpperCase();
 					break;
@@ -292,6 +300,7 @@ export enum PassageFormat {
 	Paragraph = 'paragraph',
 	Quote = 'quote',
 	Callout = 'callout',
+	Inline = 'inline',
 }
 
 export interface VerseSegment {
