@@ -142,14 +142,11 @@ async function getSuggestionText(query, options) {
 		{ getLine: () => 'Paul writes, --John 1:16' },
 		null
 	);
-	assert.deepStrictEqual(
-		JSON.parse(JSON.stringify(trigger)),
-		{
-			end: { line: 0, ch: 25 },
-			query: 'Paul writes, --John 1:16',
-			start: { ch: 13, line: 0 },
-		}
-	);
+	assert.deepStrictEqual(JSON.parse(JSON.stringify(trigger)), {
+		end: { line: 0, ch: 25 },
+		query: 'Paul writes, --John 1:16',
+		start: { ch: 13, line: 0 },
+	});
 
 	assert.strictEqual(
 		await getSuggestionText('--John 1:16-2:1+inline', {

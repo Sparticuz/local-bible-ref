@@ -41,7 +41,8 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			fullPreview: {
 				name: '전체 구절 미리보기',
-				description: '미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
+				description:
+					'미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
 			},
 		},
 	},
@@ -81,8 +82,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			collapsible: {
 				name: '접을 수 있는',
-				description:
-					'해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
+				description: '해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
 			},
 		},
 	},
