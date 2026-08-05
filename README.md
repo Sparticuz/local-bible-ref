@@ -81,3 +81,4 @@ If all of this seems a bit confusing, please check out the aforementioned [markd
 ## Limitations
 
 - Referencing does not yet support multiple passages: `Genesis 1:1; John 1:1`
+- Ellipsis omission markers require every intervening verse number to be present in the source file. If a translation omits a verse number entirely—for example, verse 37 in some translations of Acts 8—a reference such as `--acts8:26-36,38-40` will not place an ellipsis between verses 36 and 38.

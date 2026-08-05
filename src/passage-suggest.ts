@@ -13,7 +13,10 @@ import {
 } from 'obsidian';
 import { BibleFormat } from './local-bible-ref-setting-tab';
 import PassageReference, { PassageFormat } from './passage-reference';
-import LocalBibleRefSettings, { QuoteReferencePosition } from './settings';
+import LocalBibleRefSettings, {
+	OmissionMarker,
+	QuoteReferencePosition,
+} from './settings';
 import { I18N } from './i18n';
 
 export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
@@ -98,16 +101,53 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		let texts = await this.getChapterTexts(passageRef);
 		if (!texts) return [];
 
-		// split first chapter by start verse
-		const textFromVerse = this.getTextFromStartVerse(texts[0], passageRef);
-		if (!textFromVerse) return [];
-		texts[0] = textFromVerse;
+		if (passageRef.verseSegments.length > 1) {
+			let selectionText = '';
+			for (let i = 0; i < passageRef.verseSegments.length; i++) {
+				const segment = passageRef.verseSegments[i];
+				const segmentText = this.getTextForVerseRange(
+					texts[0],
+					segment.startVerse,
+					segment.endVerse
+				);
+				if (!segmentText) return [];
 
-		// split last chapter by end verse
-		const lastIndex = texts.length - 1;
-		const textToVerse = this.getTextToEndVerse(texts[lastIndex], passageRef);
-		if (!textToVerse) return [];
-		texts[lastIndex] = textToVerse;
+				let usesEllipsis = false;
+				if (i > 0) {
+					const previousSegment = passageRef.verseSegments[i - 1];
+					const hasOmittedVerse =
+						segment.startVerse > previousSegment.endVerse + 1;
+					usesEllipsis =
+						hasOmittedVerse &&
+						this.settings.omissionMarker === OmissionMarker.Ellipsis;
+					selectionText += usesEllipsis ? ' … ' : '\n';
+				}
+
+				selectionText += usesEllipsis
+					? segmentText.replace(/^(?:[>-] )+/, '')
+					: segmentText;
+			}
+			texts = [selectionText];
+		} else {
+			const lastIndex = texts.length - 1;
+			const firstText = this.getTextForVerseRange(
+				texts[0],
+				passageRef.startVerse,
+				lastIndex === 0 ? passageRef.endVerse : undefined
+			);
+			if (!firstText) return [];
+			texts[0] = firstText;
+
+			if (lastIndex > 0) {
+				const lastText = this.getTextForVerseRange(
+					texts[lastIndex],
+					undefined,
+					passageRef.endVerse
+				);
+				if (!lastText) return [];
+				texts[lastIndex] = lastText;
+			}
+		}
 
 		// clean up chapter texts
 		const multipleChapters = texts.length > 1;
@@ -172,18 +212,48 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		return texts;
 	}
 
+	/** Extracts an optional verse range from one chapter. */
+	private getTextForVerseRange(
+		text: string,
+		startVerse?: number,
+		endVerse?: number
+	): string | null {
+		if (endVerse !== undefined && endVerse !== -1) {
+			const firstVerseToValidate = startVerse ?? endVerse;
+			for (let verse = firstVerseToValidate; verse <= endVerse; verse++) {
+				if (!this.getTextFromStartVerse(text, verse)) return null;
+			}
+		}
+
+		let selectedText = text;
+		if (startVerse !== undefined) {
+			const textFromVerse = this.getTextFromStartVerse(
+				selectedText,
+				startVerse
+			);
+			if (!textFromVerse) return null;
+			selectedText = textFromVerse;
+		}
+		if (endVerse !== undefined) {
+			const textToVerse = this.getTextToEndVerse(selectedText, endVerse);
+			if (!textToVerse) return null;
+			selectedText = textToVerse;
+		}
+		return selectedText;
+	}
+
 	/** Extracts the text in the chapter from the start verse to the end. */
 	private getTextFromStartVerse(
 		text: string,
-		ref: PassageReference
+		startVerse: number
 	): string | null {
 		let pattern = '';
 		if (this.settings.bibleFormat === BibleFormat.BibleLinker) {
-			pattern = `#{1,6} [a-zA-Z]*${ref.startVerse}[a-zA-Z]*\\n\\w+`;
+			pattern = `#{1,6} [a-zA-Z]*${startVerse}[a-zA-Z]*\\n\\w+`;
 		} else {
 			const quoteOrList = '(?:[>-] )*';
 			const chapterNum = '(?:\\*\\*\\d{1,3}\\*\\* )?';
-			const verseNum = `<sup>${ref.startVerse}</sup>`;
+			const verseNum = `<sup>${startVerse}</sup>`;
 			pattern = quoteOrList + chapterNum + verseNum;
 		}
 
@@ -197,18 +267,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	}
 
 	/** Extracts the text in the chapter from the start to the end verse. */
-	private getTextToEndVerse(
-		text: string,
-		ref: PassageReference
-	): string | null {
-		if (ref.endVerse === -1) return text;
+	private getTextToEndVerse(text: string, endVerse: number): string | null {
+		if (endVerse === -1) return text;
 
 		let pattern = '';
 		if (this.settings.bibleFormat === BibleFormat.BibleLinker) {
-			pattern = `#{1,6} [a-zA-Z]*${ref.endVerse + 1}[a-zA-Z]*\\n\\w+`;
+			pattern = `#{1,6} [a-zA-Z]*${endVerse + 1}[a-zA-Z]*\\n\\w+`;
 		} else {
 			const quoteOrList = '(?:[>-] )*';
-			const verseNum = `<sup>${ref.endVerse + 1}</sup>`;
+			const verseNum = `<sup>${endVerse + 1}</sup>`;
 			pattern = quoteOrList + verseNum;
 		}
 
@@ -269,7 +336,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 	/** Removes footnote refs from the given text. */
 	private removeFootnoteRefs(text: string): string {
-		return text.replace(/ \[\^\w{1,9}\]/g, '');
+		return text.replace(/[ \t]?\[\^[^\]\r\n]*\](?!:)/g, '');
 	}
 
 	/** Removes the beginning-of-file content from the given text. */
