@@ -1,5 +1,5 @@
 import { PassageFormat } from 'src/passage-reference';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export interface Book {
 	id: string;
@@ -34,6 +34,12 @@ export interface SettingsLabels {
 			};
 			bibleFormat: Control;
 			fullPreview: Control;
+			omissionMarker: Control & {
+				options: {
+					[OmissionMarker.None]: string;
+					[OmissionMarker.Ellipsis]: string;
+				};
+			};
 		};
 	};
 
