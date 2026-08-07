@@ -114,10 +114,10 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 				// A range ends immediately before the next verse marker, so it can
 				// retain a heading that introduces that next, unselected verse.
-				// Remove headings before composing segments; otherwise an inline
-				// ellipsis and the next verse become part of the heading and are
-				// removed with it during final cleanup.
-				const segmentText = this.removeHeadings(selectedSegment).trim();
+				// Remove headings before composing segments; otherwise the ellipsis
+				// and next verse become part of the heading during final cleanup.
+				// Preserve line breaks exposed by removing the trailing heading.
+				const segmentText = this.removeHeadings(selectedSegment).trimStart();
 
 				let usesEllipsis = false;
 				if (i > 0) {
@@ -127,7 +127,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 					usesEllipsis =
 						hasOmittedVerse &&
 						this.settings.omissionMarker === OmissionMarker.Ellipsis;
-					selectionText += usesEllipsis ? ' … ' : '\n';
+					if (usesEllipsis) {
+						const beginsOnNewLine = /(?:\r?\n)+$/.test(selectionText);
+						const markdownPrefix = beginsOnNewLine
+							? (segmentText.match(/^(?:[>-] )+/)?.[0] ?? '')
+							: '';
+						selectionText += beginsOnNewLine ? `${markdownPrefix}… ` : ' … ';
+					} else {
+						selectionText += '\n';
+					}
 				}
 
 				selectionText += usesEllipsis
