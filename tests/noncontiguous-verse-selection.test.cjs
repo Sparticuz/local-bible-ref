@@ -337,7 +337,7 @@ test('ellipsis markers appear once per omitted span', async () => {
 	);
 });
 
-test('a trailing heading does not consume an ellipsis or the next verse label', async () => {
+test('a trailing heading preserves the line break before an ellipsis', async () => {
 	const versesWithHeadings = [
 		'> <sup>1</sup> One.',
 		'> <sup>2</sup> Two.',
@@ -345,6 +345,7 @@ test('a trailing heading does not consume an ellipsis or the next verse label', 
 		'> <sup>4</sup> Four.',
 		'> <sup>5</sup> Five.',
 		'> <sup>6</sup> Six.',
+		'',
 		'#### Zayin',
 		'> <sup>7</sup> Seven.',
 		'> <sup>20</sup> Lord, see how I am in distress.',
@@ -363,7 +364,7 @@ test('a trailing heading does not consume an ellipsis or the next verse label', 
 	assert.equal(suggestions.length, 1);
 	assert.ok(
 		suggestions[0].text.includes(
-			'> > <sup>6</sup> Six. … <sup>20</sup> Lord, see how I am in distress.'
+			'> > <sup>6</sup> Six.\n> \n> > … <sup>20</sup> Lord, see how I am in distress.'
 		)
 	);
 });
