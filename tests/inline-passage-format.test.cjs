@@ -45,6 +45,7 @@ const PassageSuggest = loadPassageSuggest();
 function makeSuggest({
 	defaultPassageFormat = 'paragraph',
 	bibleFormat = 'localBibleRef',
+	showVerseIndicators = true,
 	chapterTexts = {
 		1: '<sup>16</sup> For God so loved the world.\n<sup>17</sup> For God did not send the Son!',
 	},
@@ -61,6 +62,7 @@ function makeSuggest({
 			linkToPassage: true,
 		},
 		callout: { type: 'quote', linkToPassage: true, collapsible: true },
+		inline: { showVerseIndicators },
 	};
 	const app = {
 		vault: {
@@ -108,6 +110,12 @@ async function getSuggestionText(query, options) {
 	assert.strictEqual(
 		await getSuggestionText('--John 1:16+i'),
 		'"<sup>16</sup> For God so loved the world." ([[Bibles/ESV/John/John 1.md|John 1:16 - ESV]])'
+	);
+	assert.strictEqual(
+		await getSuggestionText('--John 1:16-17+inline', {
+			showVerseIndicators: false,
+		}),
+		'"For God so loved the world. For God did not send the Son!" ([[Bibles/ESV/John/John 1.md|John 1:16-17 - ESV]])'
 	);
 	assert.strictEqual(
 		await getSuggestionText('Paul writes, --John 1:16+esv'),

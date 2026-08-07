@@ -102,6 +102,17 @@ export const SETTINGS_LABELS: SettingsLabels = {
 		},
 	},
 
+	inlineFormat: {
+		name: 'Inline-Format',
+		controls: {
+			showVerseIndicators: {
+				name: 'Versnummern anzeigen',
+				description:
+					'Ob Versnummern in Inline-Bibelstellen angezeigt werden sollen.',
+			},
+		},
+	},
+
 	issues: {
 		before:
 			'Falls Sie Probleme mit Local Bible Ref feststellen oder Verbesserungsvorschläge haben, ',
