@@ -130,6 +130,11 @@ export default class PassageReference
 		return `${this.book.name} ${a}-${b} - ${this.version}`;
 	}
 
+	/** Stringifies this reference as a whole-chapter reference. */
+	stringifyFullChapter(): string {
+		return this.book.name + ` ${this.startChapter} - ${this.version}`;
+	}
+
 	/** Parses and normalizes a comma-separated verse selection in one chapter. */
 	private static parseVerseSelection(text: string): ChapterReference | null {
 		const match = text.match(/^(\d{1,3}):(.+,.+)$/);

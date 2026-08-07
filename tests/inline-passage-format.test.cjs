@@ -144,6 +144,22 @@ async function getSuggestionText(query, options) {
 		}),
 		'"<sup>1</sup> He said, "Come and see." <sup>2</sup> They came." ([[Bibles/ESV/John/John 1.md|John 1 - ESV]])'
 	);
+	assert.strictEqual(
+		await getSuggestionText('--John 1:1-2+inline', {
+			chapterTexts: {
+				1: '<sup>1</sup> First verse.\n<sup>2</sup> Last verse.',
+			},
+		}),
+		'"<sup>1</sup> First verse. <sup>2</sup> Last verse." ([[Bibles/ESV/John/John 1.md|John 1 - ESV]])'
+	);
+	assert.strictEqual(
+		await getSuggestionText('--John 1:1-2+inline', {
+			chapterTexts: {
+				1: '<sup>1</sup> First verse.\n<sup>2</sup> Second verse.\n<sup>3</sup> Last verse.',
+			},
+		}),
+		'"<sup>1</sup> First verse. <sup>2</sup> Second verse." ([[Bibles/ESV/John/John 1.md|John 1:1-2 - ESV]])'
+	);
 
 	const trigger = makeSuggest().onTrigger(
 		{ line: 0, ch: 25 },

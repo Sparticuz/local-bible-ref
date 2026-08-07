@@ -100,6 +100,10 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		// grab all chapters in the range
 		let texts = await this.getChapterTexts(passageRef);
 		if (!texts) return [];
+		const useFullChapterReference = this.isFullChapterRange(
+			passageRef,
+			texts[0]
+		);
 
 		if (passageRef.verseSegments.length > 1) {
 			let selectionText = '';
@@ -159,7 +163,12 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		// suggest
 		const fullText = texts.join('\n\n');
 		const excerpt = this.generateExcerpt(fullText);
-		const text = this.formatTexts(texts, passageRef, context);
+		const text = this.formatTexts(
+			texts,
+			passageRef,
+			context,
+			useFullChapterReference
+		);
 		return [{ excerpt, text }];
 	}
 
@@ -210,6 +219,17 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		return texts;
+	}
+
+	/** Whether an explicit verse range covers every verse in one chapter. */
+	private isFullChapterRange(ref: PassageReference, text: string): boolean {
+		return (
+			ref.startChapter === ref.endChapter &&
+			ref.verseSegments.length === 1 &&
+			ref.startVerse === 1 &&
+			ref.endVerse !== -1 &&
+			this.getTextFromStartVerse(text, ref.endVerse + 1) === null
+		);
 	}
 
 	/** Extracts an optional verse range from one chapter. */
@@ -387,7 +407,8 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	private formatTexts(
 		texts: string[],
 		passageRef: PassageReference,
-		context: EditorSuggestContext
+		context: EditorSuggestContext,
+		useFullChapterReference: boolean
 	): string {
 		let formatted = '';
 		switch (passageRef.format) {
@@ -410,8 +431,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				let stringRef = '';
 				if (includeReference) {
 					if (linkToPassage)
-						stringRef = this.generatePassageLink(passageRef, context);
-					else stringRef = passageRef.stringify();
+						stringRef = this.generatePassageLink(
+							passageRef,
+							context,
+							useFullChapterReference
+						);
+					else
+						stringRef = useFullChapterReference
+							? passageRef.stringifyFullChapter()
+							: passageRef.stringify();
 					if (referencePosition === QuoteReferencePosition.Beginning)
 						stringRef += '\n';
 					else stringRef = `\n> ${stringRef}`;
@@ -432,8 +460,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 				let stringRef = '';
 				if (linkToPassage)
-					stringRef = this.generatePassageLink(passageRef, context);
-				else stringRef = passageRef.stringify();
+					stringRef = this.generatePassageLink(
+						passageRef,
+						context,
+						useFullChapterReference
+					);
+				else
+					stringRef = useFullChapterReference
+						? passageRef.stringifyFullChapter()
+						: passageRef.stringify();
 
 				formatted = `> [!${type}]${collapsible ? '+' : ''} ${stringRef}\n`;
 				formatted += texts.join('\n\n').trim();
@@ -448,7 +483,11 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				formatted = formatted.replace(/[ \t]*\r?\n+[ \t]*/g, ' ');
 				if (!this.settings.inline.showVerseIndicators)
 					formatted = formatted.replace(/<sup>\d{1,3}<\/sup>\s*/g, '');
-				const sourceReference = this.generatePassageLink(passageRef, context);
+				const sourceReference = this.generatePassageLink(
+					passageRef,
+					context,
+					useFullChapterReference
+				);
 				formatted = `"${formatted}" (${sourceReference})`;
 				break;
 			}
@@ -460,12 +499,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	/** Generates a link to the passage within the vault. */
 	private generatePassageLink(
 		ref: PassageReference,
-		context: EditorSuggestContext
+		context: EditorSuggestContext,
+		useFullChapterReference: boolean
 	): string {
 		const { version, book, startChapter, startVerse } = ref;
 		const path = `${this.settings.biblesPath}/${version}/${book.name}/${book.name} ${startChapter}.md`;
 		const file = this.app.vault.getFileByPath(normalizePath(path));
-		if (!file) return ref.stringify();
+		const displayReference = useFullChapterReference
+			? ref.stringifyFullChapter()
+			: ref.stringify();
+		if (!file) return displayReference;
 
 		return this.app.fileManager.generateMarkdownLink(
 			file,
@@ -473,7 +516,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 			this.settings.bibleFormat === BibleFormat.BibleLinker
 				? `#${startVerse}`
 				: undefined,
-			ref.stringify()
+			displayReference
 		);
 	}
 }
