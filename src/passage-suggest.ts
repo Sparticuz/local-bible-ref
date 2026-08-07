@@ -175,7 +175,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		const fullText = texts.join('\n\n');
 		const excerpt = this.generateExcerpt(fullText);
 		const text = this.formatTexts(texts, passageRef, context);
-		return [{ excerpt, text }];
+		return [{ excerpt, text, format: passageRef.format }];
 	}
 
 	renderSuggestion(item: PassageSuggestion, el: HTMLElement): void {
@@ -187,11 +187,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		_: MouseEvent | KeyboardEvent
 	): void {
 		if (!this.context) return;
-		this.context.editor.replaceRange(
-			item.text,
-			this.context.start,
-			this.context.end
-		);
+
+		let start = this.context.start;
+		if (item.format === PassageFormat.Inline && start.ch > 0) {
+			const precedingText = this.context.editor
+				.getLine(start.line)
+				.slice(0, start.ch);
+			if (precedingText.trim().length === 0) start = { ...start, ch: 0 };
+		}
+
+		this.context.editor.replaceRange(item.text, start, this.context.end);
 	}
 
 	/** Retrieves the texts of the chapters within a passage ref. */
@@ -496,4 +501,5 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 interface PassageSuggestion {
 	excerpt: string;
 	text: string;
+	format: PassageFormat;
 }

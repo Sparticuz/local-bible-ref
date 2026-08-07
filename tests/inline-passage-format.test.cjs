@@ -183,6 +183,32 @@ async function getSuggestionText(query, options) {
 		}),
 		'"<sup>16</sup> For God so loved the world." ([[Bibles/ESV/John/John 1.md|John 1:16 - ESV]])'
 	);
+
+	const suggest = makeSuggest();
+	let line = ' --John 1:16+i';
+	const editor = {
+		getLine: () => line,
+		replaceRange(text, start, end) {
+			line = line.slice(0, start.ch) + text + line.slice(end.ch);
+		},
+	};
+	const cursor = { line: 0, ch: line.length };
+	const insertionTrigger = suggest.onTrigger(cursor, editor, null);
+	assert.ok(insertionTrigger);
+	const [inlineSuggestion] = await suggest.getSuggestions({
+		...insertionTrigger,
+		file: { path: 'Notes/Test.md' },
+	});
+	suggest.context = {
+		...insertionTrigger,
+		editor,
+		file: { path: 'Notes/Test.md' },
+	};
+	suggest.selectSuggestion(inlineSuggestion, {});
+	assert.strictEqual(
+		line,
+		'"<sup>16</sup> For God so loved the world." ([[Bibles/ESV/John/John 1.md|John 1:16 - ESV]])'
+	);
 })().catch((error) => {
 	console.error(error);
 	process.exitCode = 1;
