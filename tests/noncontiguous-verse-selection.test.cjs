@@ -337,6 +337,37 @@ test('ellipsis markers appear once per omitted span', async () => {
 	);
 });
 
+test('a trailing heading does not consume an ellipsis or the next verse label', async () => {
+	const versesWithHeadings = [
+		'> <sup>1</sup> One.',
+		'> <sup>2</sup> Two.',
+		'> <sup>3</sup> Three.',
+		'> <sup>4</sup> Four.',
+		'> <sup>5</sup> Five.',
+		'> <sup>6</sup> Six.',
+		'#### Zayin',
+		'> <sup>7</sup> Seven.',
+		'> <sup>20</sup> Lord, see how I am in distress.',
+		'> <sup>21</sup> Twenty-one.',
+	].join('\n');
+	const passageSuggest = createPassageSuggest(
+		versesWithHeadings,
+		'callout',
+		'ellipsis'
+	);
+
+	const suggestions = await passageSuggest.getSuggestions({
+		query: '--lam1:1-6,20',
+	});
+
+	assert.equal(suggestions.length, 1);
+	assert.ok(
+		suggestions[0].text.includes(
+			'> > <sup>6</sup> Six. … <sup>20</sup> Lord, see how I am in distress.'
+		)
+	);
+});
+
 test('ellipsis markers do not retain an inline blockquote marker', async () => {
 	const quotedVerses = [
 		'> <sup>1</sup> One,',
