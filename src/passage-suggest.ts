@@ -105,12 +105,19 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 			let selectionText = '';
 			for (let i = 0; i < passageRef.verseSegments.length; i++) {
 				const segment = passageRef.verseSegments[i];
-				const segmentText = this.getTextForVerseRange(
+				const selectedSegment = this.getTextForVerseRange(
 					texts[0],
 					segment.startVerse,
 					segment.endVerse
 				);
-				if (!segmentText) return [];
+				if (!selectedSegment) return [];
+
+				// A range ends immediately before the next verse marker, so it can
+				// retain a heading that introduces that next, unselected verse.
+				// Remove headings before composing segments; otherwise an inline
+				// ellipsis and the next verse become part of the heading and are
+				// removed with it during final cleanup.
+				const segmentText = this.removeHeadings(selectedSegment).trim();
 
 				let usesEllipsis = false;
 				if (i > 0) {
