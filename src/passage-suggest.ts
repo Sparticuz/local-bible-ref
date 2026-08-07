@@ -109,12 +109,19 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 			let selectionText = '';
 			for (let i = 0; i < passageRef.verseSegments.length; i++) {
 				const segment = passageRef.verseSegments[i];
-				const segmentText = this.getTextForVerseRange(
+				const selectedSegment = this.getTextForVerseRange(
 					texts[0],
 					segment.startVerse,
 					segment.endVerse
 				);
-				if (!segmentText) return [];
+				if (!selectedSegment) return [];
+
+				// A range ends immediately before the next verse marker, so it can
+				// retain a heading that introduces that next, unselected verse.
+				// Remove headings before composing segments; otherwise the ellipsis
+				// and next verse become part of the heading during final cleanup.
+				// Preserve line breaks exposed by removing the trailing heading.
+				const segmentText = this.removeHeadings(selectedSegment).trimStart();
 
 				let usesEllipsis = false;
 				if (i > 0) {
@@ -124,7 +131,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 					usesEllipsis =
 						hasOmittedVerse &&
 						this.settings.omissionMarker === OmissionMarker.Ellipsis;
-					selectionText += usesEllipsis ? ' … ' : '\n';
+					if (usesEllipsis) {
+						const beginsOnNewLine = /(?:\r?\n)+$/.test(selectionText);
+						const markdownPrefix = beginsOnNewLine
+							? (segmentText.match(/^(?:[>-] )+/)?.[0] ?? '')
+							: '';
+						selectionText += beginsOnNewLine ? `${markdownPrefix}… ` : ' … ';
+					} else {
+						selectionText += '\n';
+					}
 				}
 
 				selectionText += usesEllipsis
@@ -169,7 +184,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 			context,
 			useFullChapterReference
 		);
-		return [{ excerpt, text }];
+		return [{ excerpt, text, format: passageRef.format }];
 	}
 
 	renderSuggestion(item: PassageSuggestion, el: HTMLElement): void {
@@ -181,11 +196,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		_: MouseEvent | KeyboardEvent
 	): void {
 		if (!this.context) return;
-		this.context.editor.replaceRange(
-			item.text,
-			this.context.start,
-			this.context.end
-		);
+
+		let start = this.context.start;
+		if (item.format === PassageFormat.Inline && start.ch > 0) {
+			const precedingText = this.context.editor
+				.getLine(start.line)
+				.slice(0, start.ch);
+			if (precedingText.trim().length === 0) start = { ...start, ch: 0 };
+		}
+
+		this.context.editor.replaceRange(item.text, start, this.context.end);
 	}
 
 	/** Retrieves the texts of the chapters within a passage ref. */
@@ -524,4 +544,5 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 interface PassageSuggestion {
 	excerpt: string;
 	text: string;
+	format: PassageFormat;
 }
