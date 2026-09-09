@@ -35,6 +35,10 @@ export default class LocalBibleRefPlugin extends Plugin {
 			collapsible: true,
 		};
 
+		const inlineSettings = {
+			showVerseIndicators: true,
+		};
+
 		this.settings ??= {
 			biblesPath: '',
 			defaultVersionShorthand: '',
@@ -43,10 +47,12 @@ export default class LocalBibleRefPlugin extends Plugin {
 			fullPreview: false,
 			quote: quoteSettings,
 			callout: calloutSettings,
+			inline: inlineSettings,
 		};
 
 		if (!this.settings.quote) this.settings.quote = quoteSettings;
 		if (!this.settings.callout) this.settings.callout = calloutSettings;
+		if (!this.settings.inline) this.settings.inline = inlineSettings;
 
 		await this.saveSettings();
 	}

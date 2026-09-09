@@ -30,6 +30,7 @@ export interface SettingsLabels {
 					[PassageFormat.Paragraph]: string;
 					[PassageFormat.Quote]: string;
 					[PassageFormat.Callout]: string;
+					[PassageFormat.Inline]: string;
 				};
 			};
 			bibleFormat: Control;
@@ -57,6 +58,13 @@ export interface SettingsLabels {
 			calloutType: Control;
 			linkToPassage: Control;
 			collapsible: Control;
+		};
+	};
+
+	inlineFormat: {
+		name: string;
+		controls: {
+			showVerseIndicators: Control;
 		};
 	};
 

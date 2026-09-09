@@ -31,6 +31,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: '절',
 					[PassageFormat.Quote]: '인용하다',
 					[PassageFormat.Callout]: '호출',
+					[PassageFormat.Inline]: '인라인',
 				},
 			},
 			bibleFormat: {
@@ -82,6 +83,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: '접을 수 있는',
 				description:
 					'해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: '인라인 형식',
+		controls: {
+			showVerseIndicators: {
+				name: '절 번호 표시',
+				description: '인라인 구절에 절 번호를 표시할지 여부입니다.',
 			},
 		},
 	},

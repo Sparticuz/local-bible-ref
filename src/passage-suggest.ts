@@ -48,9 +48,10 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		editor: Editor,
 		_: TFile | null
 	): EditorSuggestTriggerInfo | null {
-		// line must start with '--'
-		const line = editor.getLine(cursor.line);
-		if (!line.startsWith('--')) return null;
+		const line = editor.getLine(cursor.line).slice(0, cursor.ch);
+		const match = line.match(PassageReference.regExp);
+		if (!match) return null;
+		const referenceStart = match.index ?? 0;
 
 		// if no settings, alert user
 		if (!this.settings.biblesPath) {
@@ -63,18 +64,14 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		// min ref length is 5 ('--ex1')
-		if (cursor.ch < 5) return null;
-
-		// must be a passage ref
-		const isPassage = PassageReference.regExp.test(line);
-		if (!isPassage) return null;
+		if (cursor.ch - referenceStart < 5) return null;
 
 		// trigger info
 		return {
 			end: cursor,
 			query: line,
 			start: {
-				ch: 0,
+				ch: referenceStart,
 				line: cursor.line,
 			},
 		};
@@ -123,7 +120,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		const fullText = texts.join('\n\n');
 		const excerpt = this.generateExcerpt(fullText);
 		const text = this.formatTexts(texts, passageRef, context);
-		return [{ excerpt, text }];
+		return [{ excerpt, text, format: passageRef.format }];
 	}
 
 	renderSuggestion(item: PassageSuggestion, el: HTMLElement): void {
@@ -135,11 +132,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		_: MouseEvent | KeyboardEvent
 	): void {
 		if (!this.context) return;
-		this.context.editor.replaceRange(
-			item.text,
-			this.context.start,
-			this.context.end
-		);
+
+		let start = this.context.start;
+		if (item.format === PassageFormat.Inline && start.ch > 0) {
+			const precedingText = this.context.editor
+				.getLine(start.line)
+				.slice(0, start.ch);
+			if (precedingText.trim().length === 0) start = { ...start, ch: 0 };
+		}
+
+		this.context.editor.replaceRange(item.text, start, this.context.end);
 	}
 
 	/** Retrieves the texts of the chapters within a passage ref. */
@@ -377,6 +379,17 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				formatted += '\n\n';
 				break;
 			}
+			case PassageFormat.Inline: {
+				formatted = texts.join('\n').trim();
+				formatted = formatted.replace(/^(?:> |- )+/gm, '');
+				formatted = formatted.replace(/^\*\*\d{1,3}\*\* ?/gm, '');
+				formatted = formatted.replace(/[ \t]*\r?\n+[ \t]*/g, ' ');
+				if (!this.settings.inline.showVerseIndicators)
+					formatted = formatted.replace(/<sup>\d{1,3}<\/sup>\s*/g, '');
+				const sourceReference = this.generatePassageLink(passageRef, context);
+				formatted = `"${formatted}" (${sourceReference})`;
+				break;
+			}
 		}
 
 		return formatted;
@@ -406,4 +419,5 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 interface PassageSuggestion {
 	excerpt: string;
 	text: string;
+	format: PassageFormat;
 }

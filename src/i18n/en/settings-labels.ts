@@ -31,6 +31,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Paragraph',
 					[PassageFormat.Quote]: 'Quote',
 					[PassageFormat.Callout]: 'Callout',
+					[PassageFormat.Inline]: 'Inline',
 				},
 			},
 			bibleFormat: {
@@ -86,6 +87,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Collapsible',
 				description:
 					'Whether the callout to use for the passage is collapsible.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: 'Inline format',
+		controls: {
+			showVerseIndicators: {
+				name: 'Show verse indicators',
+				description: 'Whether to include verse numbers in inline passages.',
 			},
 		},
 	},
