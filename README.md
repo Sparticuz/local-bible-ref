@@ -78,3 +78,4 @@ If all of this seems a bit confusing, please check out the aforementioned [markd
 ## Limitations
 
 - Referencing does not yet support multiple passages: `Genesis 1:1; John 1:1`
+- Verse ranges currently stop at the next consecutive verse number. If that number is absent from the source file (for example, verse 37 in some translations of Acts 8), a selection such as `--acts8:26-36,38-40` can include later verses in the first range and repeat them in the second.

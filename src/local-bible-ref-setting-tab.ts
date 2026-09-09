@@ -11,7 +11,11 @@ import {
 } from 'obsidian';
 import { PassageFormat } from './passage-reference';
 import PathSuggest from './path-suggest';
-import { CalloutType, QuoteReferencePosition } from './settings';
+import {
+	CalloutType,
+	OmissionMarker,
+	QuoteReferencePosition,
+} from './settings';
 import VersionSuggest from './version-suggest';
 import { SettingsLabels } from './i18n/models';
 import { I18N } from './i18n';
@@ -176,6 +180,21 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 							.setValue(this.plugin.settings.fullPreview)
 							.onChange(async (value) => {
 								this.plugin.settings.fullPreview = value;
+								await this.plugin.saveSettings();
+							})
+					)
+			)
+			.addSetting((setting) =>
+				setting
+					.setName(optional.controls.omissionMarker.name)
+					.setDesc(optional.controls.omissionMarker.description)
+					.setClass(this.settingClass)
+					.addDropdown((dropdown) =>
+						dropdown
+							.addOptions(optional.controls.omissionMarker.options)
+							.setValue(this.plugin.settings.omissionMarker)
+							.onChange(async (value) => {
+								this.plugin.settings.omissionMarker = value as OmissionMarker;
 								await this.plugin.saveSettings();
 							})
 					)

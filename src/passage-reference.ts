@@ -9,6 +9,7 @@ export default class PassageReference
 	startVerse: number;
 	endChapter: number;
 	endVerse: number;
+	verseSegments: VerseSegment[];
 	book: Book;
 	version: string;
 	format: PassageFormat;
@@ -22,6 +23,16 @@ export default class PassageReference
 		this.startVerse = chapterRef.startVerse;
 		this.endChapter = chapterRef.endChapter;
 		this.endVerse = chapterRef.endVerse;
+		this.verseSegments = chapterRef.verseSegments ?? [];
+		if (
+			this.verseSegments.length === 0 &&
+			this.startChapter === this.endChapter &&
+			this.endVerse !== -1
+		) {
+			this.verseSegments = [
+				{ startVerse: this.startVerse, endVerse: this.endVerse },
+			];
+		}
 		this.book = book;
 		this.version = passageOptions.version;
 		this.format = passageOptions.format;
@@ -36,7 +47,8 @@ export default class PassageReference
 		const match = text.match(this.regExp);
 		if (!match) return null;
 
-		let chapterRef = this.parseMultiChapterRef(match[2]);
+		let chapterRef = this.parseVerseSelection(match[2]);
+		if (!chapterRef) chapterRef = this.parseMultiChapterRef(match[2]);
 		if (!chapterRef) chapterRef = this.parseMultiChapterVerseRef(match[2]);
 		if (!chapterRef) chapterRef = this.parseMultiVerseRef(match[2]);
 		if (!chapterRef) return null;
@@ -60,8 +72,13 @@ export default class PassageReference
 		regExpString += books
 			.map((b) => `${b.name}|${b.aliases.join('|')}`)
 			.join('|');
+		const selectionItem = '\\d{1,3}(?: ?\\- ?\\d{1,3})?';
 		regExpString +=
-			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
+			') ?(\\d{1,3}(?::\\d{1,3})?(?: ?\\- ?\\d{1,3}(?::\\d{1,3})?)?|\\d{1,3}:' +
+			selectionItem +
+			'(?:, ?' +
+			selectionItem +
+			')+)((?: ?\\+\\w+(?::[a-z]+)?){0,2})$';
 
 		return new RegExp(regExpString, 'i');
 	}
@@ -76,6 +93,18 @@ export default class PassageReference
 				`${this.book.name} ${this.startChapter}-` +
 				`${this.endChapter} - ${this.version}`
 			);
+		}
+
+		// noncontiguous verse selection
+		if (this.verseSegments.length > 1) {
+			const selection = this.verseSegments
+				.map(({ startVerse, endVerse }) =>
+					startVerse === endVerse
+						? `${startVerse}`
+						: `${startVerse}-${endVerse}`
+				)
+				.join(',');
+			return `${this.book.name} ${this.startChapter}:${selection} - ${this.version}`;
 		}
 
 		// multi-verse ref
@@ -95,6 +124,42 @@ export default class PassageReference
 		const a = `${this.startChapter}:${this.startVerse}`;
 		const b = `${this.endChapter}:${this.endVerse}`;
 		return `${this.book.name} ${a}-${b} - ${this.version}`;
+	}
+
+	/** Parses and normalizes a comma-separated verse selection in one chapter. */
+	private static parseVerseSelection(text: string): ChapterReference | null {
+		const match = text.match(/^(\d{1,3}):(.+,.+)$/);
+		if (!match) return null;
+
+		const verseSegments: VerseSegment[] = [];
+		for (const item of match[2].split(',')) {
+			const itemMatch = item.trim().match(/^(\d{1,3})(?: ?- ?(\d{1,3}))?$/);
+			if (!itemMatch) return null;
+
+			const startVerse = +itemMatch[1];
+			const endVerse = itemMatch[2] ? +itemMatch[2] : startVerse;
+			if (startVerse > endVerse) return null;
+			verseSegments.push({ startVerse, endVerse });
+		}
+
+		verseSegments.sort((a, b) => a.startVerse - b.startVerse);
+		const normalizedSegments: VerseSegment[] = [];
+		for (const segment of verseSegments) {
+			const previous = normalizedSegments[normalizedSegments.length - 1];
+			if (previous && segment.startVerse <= previous.endVerse + 1) {
+				previous.endVerse = Math.max(previous.endVerse, segment.endVerse);
+			} else {
+				normalizedSegments.push({ ...segment });
+			}
+		}
+
+		return {
+			startChapter: +match[1],
+			startVerse: normalizedSegments[0].startVerse,
+			endChapter: +match[1],
+			endVerse: normalizedSegments[normalizedSegments.length - 1].endVerse,
+			verseSegments: normalizedSegments,
+		};
 	}
 
 	/**
@@ -229,11 +294,17 @@ export enum PassageFormat {
 	Callout = 'callout',
 }
 
+export interface VerseSegment {
+	startVerse: number;
+	endVerse: number;
+}
+
 interface ChapterReference {
 	startChapter: number;
 	startVerse: number;
 	endChapter: number;
 	endVerse: number;
+	verseSegments?: VerseSegment[];
 }
 
 interface PassageOptions {

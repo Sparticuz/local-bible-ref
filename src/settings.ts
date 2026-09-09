@@ -7,6 +7,7 @@ export default interface LocalBibleRefSettings {
 	defaultPassageFormat: PassageFormat;
 	bibleFormat: BibleFormat;
 	fullPreview: boolean;
+	omissionMarker: OmissionMarker;
 	quote: {
 		includeReference: boolean;
 		referencePosition: QuoteReferencePosition;
@@ -17,6 +18,11 @@ export default interface LocalBibleRefSettings {
 		linkToPassage: boolean;
 		collapsible: boolean;
 	};
+}
+
+export enum OmissionMarker {
+	None = 'none',
+	Ellipsis = 'ellipsis',
 }
 
 export enum QuoteReferencePosition {

@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -42,6 +42,15 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Full Passage Preview',
 				description:
 					'Whether to display the full passage in the preview rather than just a snippet.',
+			},
+			omissionMarker: {
+				name: 'Omission marker',
+				description:
+					'The marker to insert where verses are omitted between selected segments.',
+				options: {
+					[OmissionMarker.None]: 'None',
+					[OmissionMarker.Ellipsis]: 'Ellipsis',
+				},
 			},
 		},
 	},

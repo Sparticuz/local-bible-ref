@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -43,6 +43,15 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Vollständige Passage-Vorschau',
 				description:
 					'Ob in der Vorschau der vollständige Text oder nur ein Ausschnitt angezeigt werden soll.',
+			},
+			omissionMarker: {
+				name: 'Auslassungszeichen',
+				description:
+					'Das Zeichen, das zwischen ausgewählten Abschnitten auf ausgelassene Verse hinweist.',
+				options: {
+					[OmissionMarker.None]: 'Keines',
+					[OmissionMarker.Ellipsis]: 'Auslassungspunkte',
+				},
 			},
 		},
 	},
