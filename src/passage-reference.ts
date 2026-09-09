@@ -97,6 +97,11 @@ export default class PassageReference
 		return `${this.book.name} ${a}-${b} - ${this.version}`;
 	}
 
+	/** Stringifies this reference as a whole-chapter reference. */
+	stringifyFullChapter(): string {
+		return this.book.name + ` ${this.startChapter} - ${this.version}`;
+	}
+
 	/**
 	 * Parses a multi-chapter reference from the given text.
 	 * Reference format: `startChapter[[ ]-[ ]endChapter]`.
