@@ -41,10 +41,12 @@ export default class LocalBibleRefPlugin extends Plugin {
 			defaultPassageFormat: PassageFormat.Callout,
 			bibleFormat: BibleFormat.LocalBibleRef,
 			fullPreview: false,
+			stripHeadings: true,
 			quote: quoteSettings,
 			callout: calloutSettings,
 		};
 
+		this.settings.stripHeadings ??= true;
 		if (!this.settings.quote) this.settings.quote = quoteSettings;
 		if (!this.settings.callout) this.settings.callout = calloutSettings;
 

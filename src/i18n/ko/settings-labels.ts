@@ -42,6 +42,10 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: '전체 구절 미리보기',
 				description: '미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
 			},
+			stripHeadings: {
+				name: '섹션 제목 제거',
+				description: '삽입된 구절에서 절 및 섹션 제목을 제거할지 여부.',
+			},
 		},
 	},
 

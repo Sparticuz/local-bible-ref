@@ -7,6 +7,7 @@ export default interface LocalBibleRefSettings {
 	defaultPassageFormat: PassageFormat;
 	bibleFormat: BibleFormat;
 	fullPreview: boolean;
+	stripHeadings: boolean;
 	quote: {
 		includeReference: boolean;
 		referencePosition: QuoteReferencePosition;

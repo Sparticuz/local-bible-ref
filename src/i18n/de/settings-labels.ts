@@ -44,6 +44,11 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				description:
 					'Ob in der Vorschau der vollständige Text oder nur ein Ausschnitt angezeigt werden soll.',
 			},
+			stripHeadings: {
+				name: 'Abschnittsüberschriften entfernen',
+				description:
+					'Ob Vers- und Abschnittsüberschriften aus eingefügten Passagen entfernt werden sollen.',
+			},
 		},
 	},
 

@@ -229,7 +229,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		text = this.removeChapterNumbers(text);
-		text = this.removeHeadings(text);
+		if (this.settings.stripHeadings) text = this.removeHeadings(text);
 		text = this.removeFootnoteRefs(text);
 		text = this.removeBOF(text);
 		text = this.removeEOF(text);

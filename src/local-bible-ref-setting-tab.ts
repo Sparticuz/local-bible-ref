@@ -179,6 +179,20 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 								await this.plugin.saveSettings();
 							})
 					)
+			)
+			.addSetting((setting) =>
+				setting
+					.setName(optional.controls.stripHeadings.name)
+					.setDesc(optional.controls.stripHeadings.description)
+					.setClass(this.settingClass)
+					.addToggle((toggle) =>
+						toggle
+							.setValue(this.plugin.settings.stripHeadings)
+							.onChange(async (value) => {
+								this.plugin.settings.stripHeadings = value;
+								await this.plugin.saveSettings();
+							})
+					)
 			);
 
 		// quote format settings ---

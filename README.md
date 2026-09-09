@@ -71,7 +71,7 @@ Doing things this way allows you to store and reference multiple different versi
 
 <img width="253" height="379" alt="image" src="https://github.com/user-attachments/assets/5804ceab-e69d-4b7f-a58d-3f9b5a89e3fc" />
 
-Beyond that, everything else (section headings, footnotes, links) is optional. Be careful not to add odd characters or extra text in the verses, or they will show up when you reference them. Currently, referencing will ignore YAML frontmatter, headings, chapter numbers (any bolded digits), footnotes and anything after a [horizontal rule](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Horizontal+rule).
+Beyond that, everything else (section headings, footnotes, links) is optional. Be careful not to add odd characters or extra text in the verses, or they will show up when you reference them. Referencing ignores YAML frontmatter, chapter numbers (any bolded digits), footnotes and anything after a [horizontal rule](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Horizontal+rule). Markdown verse and section headings are removed by default; disable **Strip section headings** in the plugin settings to retain them in inserted passages.
 
 If all of this seems a bit confusing, please check out the aforementioned [markdown formatted WEB](https://github.com/camelChief/markdown-webp) to help you understand the formatting requirements.
 

@@ -43,6 +43,11 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				description:
 					'Whether to display the full passage in the preview rather than just a snippet.',
 			},
+			stripHeadings: {
+				name: 'Strip section headings',
+				description:
+					'Whether to remove verse and section headings from inserted passages.',
+			},
 		},
 	},
 

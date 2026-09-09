@@ -34,6 +34,7 @@ export interface SettingsLabels {
 			};
 			bibleFormat: Control;
 			fullPreview: Control;
+			stripHeadings: Control;
 		};
 	};
 

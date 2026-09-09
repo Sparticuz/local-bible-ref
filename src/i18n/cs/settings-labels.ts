@@ -44,6 +44,11 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				description:
 					'Zda se v náhledu má zobrazit celá pasáž, a ne jen její úryvek.',
 			},
+			stripHeadings: {
+				name: 'Odstranit nadpisy oddílů',
+				description:
+					'Zda se mají z vložených pasáží odstranit nadpisy veršů a oddílů.',
+			},
 		},
 	},
 
