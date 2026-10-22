@@ -36,6 +36,8 @@ The referencing syntax also allows for a lot of flexibility:
 - Lowercase, uppercase and mixed-case references: `--gEnEsis1`
 - Spacing (not more than a single space): `-- Genesis 1:1 - 2:2`
 
+Verse ranges stop before the next available verse beyond their endpoint, even when a translation skips a verse number. For example, `--acts8:36` does not include verse 38 when verse 37 is absent.
+
 ### Options
 
 _Local Bible Ref_ also allows you to provide a few options to a reference to specify which version you would like to use as well as what markdown format to use. Add an option to a reference by adding a `+` followed by the option (in any order): `--gen1:1-5+esv`
@@ -72,6 +74,8 @@ Doing things this way allows you to store and reference multiple different versi
 <img width="253" height="379" alt="image" src="https://github.com/user-attachments/assets/5804ceab-e69d-4b7f-a58d-3f9b5a89e3fc" />
 
 Beyond that, everything else (section headings, footnotes, links) is optional. Be careful not to add odd characters or extra text in the verses, or they will show up when you reference them. Currently, referencing will ignore YAML frontmatter, headings, chapter numbers (any bolded digits), footnotes and anything after a [horizontal rule](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Horizontal+rule).
+
+Removing a footnote between sentences preserves a separating space: `First.[^note]Next.` becomes `First. Next.`.
 
 If all of this seems a bit confusing, please check out the aforementioned [markdown formatted WEB](https://github.com/camelChief/markdown-webp) to help you understand the formatting requirements.
 

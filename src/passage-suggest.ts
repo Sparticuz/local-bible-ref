@@ -208,15 +208,18 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 		let pattern = '';
 		if (this.settings.bibleFormat === BibleFormat.BibleLinker) {
-			pattern = `#{1,6} [a-zA-Z]*${ref.endVerse + 1}[a-zA-Z]*\\n\\w+`;
+			pattern = '#{1,6} [a-zA-Z]*(\\d{1,3})[a-zA-Z]*\\n\\w+';
 		} else {
 			const quoteOrList = '(?:[>-] )*';
-			const verseNum = `<sup>${ref.endVerse + 1}</sup>`;
+			const verseNum = '<sup>(\\d{1,3})</sup>';
 			pattern = quoteOrList + verseNum;
 		}
 
-		const regex = new RegExp(pattern);
-		return text.split(regex, 1)[0].trim();
+		const regex = new RegExp(pattern, 'g');
+		for (const match of text.matchAll(regex)) {
+			if (+match[1] > ref.endVerse) return text.slice(0, match.index).trim();
+		}
+		return text.trim();
 	}
 
 	private cleanText(
@@ -272,7 +275,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 	/** Removes footnote refs from the given text. */
 	private removeFootnoteRefs(text: string): string {
-		return text.replace(/[ \t]?\[\^[^\]\r\n]*\](?!:)/g, '');
+		return text.replace(
+			/[ \t]?\[\^[^\]\r\n]*\](?!:)/g,
+			(match, offset, source) => {
+				const previousChar = source[offset - 1];
+				const nextChar = source[offset + match.length];
+				return previousChar === '.' && nextChar && /\w/.test(nextChar)
+					? ' '
+					: '';
+			}
+		);
 	}
 
 	/** Removes the beginning-of-file content from the given text. */
