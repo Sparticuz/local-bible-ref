@@ -11,7 +11,11 @@ import {
 } from 'obsidian';
 import { PassageFormat } from './passage-reference';
 import PathSuggest from './path-suggest';
-import { CalloutType, QuoteReferencePosition } from './settings';
+import {
+	CalloutType,
+	OmissionMarker,
+	QuoteReferencePosition,
+} from './settings';
 import VersionSuggest from './version-suggest';
 import { SettingsLabels } from './i18n/models';
 import { I18N } from './i18n';
@@ -50,8 +54,14 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 
 	display(): void {
 		const { containerEl } = this;
-		const { required, optional, quoteFormat, calloutFormat, issues } =
-			this.settingsLabels;
+		const {
+			required,
+			optional,
+			quoteFormat,
+			calloutFormat,
+			inlineFormat,
+			issues,
+		} = this.settingsLabels;
 		containerEl.empty();
 
 		// required settings ---
@@ -176,6 +186,35 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 							.setValue(this.plugin.settings.fullPreview)
 							.onChange(async (value) => {
 								this.plugin.settings.fullPreview = value;
+								await this.plugin.saveSettings();
+							})
+					)
+			)
+			.addSetting((setting) =>
+				setting
+					.setName(optional.controls.omissionMarker.name)
+					.setDesc(optional.controls.omissionMarker.description)
+					.setClass(this.settingClass)
+					.addDropdown((dropdown) =>
+						dropdown
+							.addOptions(optional.controls.omissionMarker.options)
+							.setValue(this.plugin.settings.omissionMarker)
+							.onChange(async (value) => {
+								this.plugin.settings.omissionMarker = value as OmissionMarker;
+								await this.plugin.saveSettings();
+							})
+					)
+			)
+			.addSetting((setting) =>
+				setting
+					.setName(optional.controls.stripHeadings.name)
+					.setDesc(optional.controls.stripHeadings.description)
+					.setClass(this.settingClass)
+					.addToggle((toggle) =>
+						toggle
+							.setValue(this.plugin.settings.stripHeadings)
+							.onChange(async (value) => {
+								this.plugin.settings.stripHeadings = value;
 								await this.plugin.saveSettings();
 							})
 					)
@@ -306,6 +345,24 @@ export default class LocalBibleRefSettingTab extends PluginSettingTab {
 							.setValue(this.plugin.settings.callout.collapsible)
 							.onChange(async (value) => {
 								this.plugin.settings.callout.collapsible = value;
+								await this.plugin.saveSettings();
+							})
+					)
+			);
+
+		// inline format settings ---
+		new SettingGroup(containerEl)
+			.setHeading(inlineFormat.name)
+			.addSetting((setting) =>
+				setting
+					.setName(inlineFormat.controls.showVerseIndicators.name)
+					.setDesc(inlineFormat.controls.showVerseIndicators.description)
+					.setClass(this.settingClass)
+					.addToggle((toggle) =>
+						toggle
+							.setValue(this.plugin.settings.inline.showVerseIndicators)
+							.onChange(async (value) => {
+								this.plugin.settings.inline.showVerseIndicators = value;
 								await this.plugin.saveSettings();
 							})
 					)

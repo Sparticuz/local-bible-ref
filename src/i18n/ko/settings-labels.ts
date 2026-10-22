@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -31,6 +31,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: '절',
 					[PassageFormat.Quote]: '인용하다',
 					[PassageFormat.Callout]: '호출',
+					[PassageFormat.Inline]: '인라인',
 				},
 			},
 			bibleFormat: {
@@ -40,7 +41,20 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			fullPreview: {
 				name: '전체 구절 미리보기',
-				description: '미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
+				description:
+					'미리보기에서 전체 내용을 표시할지, 아니면 일부만 표시할지 여부.',
+			},
+			omissionMarker: {
+				name: '생략 표시',
+				description: '선택한 구간 사이에서 생략된 절을 나타내는 표시입니다.',
+				options: {
+					[OmissionMarker.None]: '없음',
+					[OmissionMarker.Ellipsis]: '줄임표',
+				},
+			},
+			stripHeadings: {
+				name: '섹션 제목 제거',
+				description: '삽입된 구절에서 절 및 섹션 제목을 제거할지 여부.',
 			},
 		},
 	},
@@ -80,8 +94,17 @@ export const SETTINGS_LABELS: SettingsLabels = {
 			},
 			collapsible: {
 				name: '접을 수 있는',
-				description:
-					'해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
+				description: '해당 구절에 사용할 콜아웃이 접을 수 있는지 여부.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: '인라인 형식',
+		controls: {
+			showVerseIndicators: {
+				name: '절 번호 표시',
+				description: '인라인 구절에 절 번호를 표시할지 여부입니다.',
 			},
 		},
 	},

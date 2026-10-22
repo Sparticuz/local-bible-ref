@@ -26,6 +26,7 @@ In order to fetch a Bible passage, simply type in a Bible reference prefixed wit
 
 - Single verse: `--gen1:1`
 - Multi verse: `--gen1:1-3`
+- Noncontiguous verses and ranges: `--gen1:1,3-5,8`
 - Single chapter: `--gen1`
 - Multi chapter: `--gen1-3`
 - Multi chapter & verse: `--gen1:3-3:9`
@@ -37,6 +38,12 @@ The referencing syntax also allows for a lot of flexibility:
 - Spacing (not more than a single space): `-- Genesis 1:1 - 2:2`
 
 Verse ranges stop before the next available verse beyond their endpoint, even when a translation skips a verse number. For example, `--acts8:36` does not include verse 38 when verse 37 is absent.
+
+Comma-separated selections are sorted, deduplicated, and merged where they overlap or touch. Every verse explicitly requested by a list must exist, including verses inside its ranges; otherwise no suggestion is shown. Ordinary contiguous ranges retain compatibility with translations that omit verse numbers.
+
+An explicit range covering every available verse in one chapter uses a chapter-only source reference. For example, `--gen1:1-31+quote` displays `Genesis 1 - <version>` when verse 31 is the chapter's final verse. Partial ranges keep their verse labels, including when verse numbers have gaps.
+
+Selections support both Local Bible Ref and Bible Linker chapter files. Set **Omission marker** to **Ellipsis** to show `…` between nonadjacent segments, or leave it at **None** to insert no marker.
 
 ### Options
 
@@ -52,7 +59,12 @@ Syntax: `--<reference>[+<option>]...`
 | `paragraph`, `p`      | Specifies that the passage should be displayed in a standard paragraph.                                                                           | ![localBibleRef4](https://github.com/user-attachments/assets/d62dc0f0-4d4b-4468-b53a-b87a2f3b5384) |
 | `quote`, `q`          | Specifies that the passage should be displayed in [quote](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Quotes) format. | ![localBibleRef5](https://github.com/user-attachments/assets/59cd0a61-de28-4c51-ac38-9faf71c2e391) |
 | `callout`, `c`        | Specifies that the passage should be displayed in [callout](https://help.obsidian.md/Editing+and+formatting/Callouts) format.                     | ![localBibleRef6](https://github.com/user-attachments/assets/2256aa40-02cc-4f08-beec-e99c169855ce) |
+| `inline`, `i`         | Wraps the passage in quotation marks and follows it with a linked source reference, for use within surrounding prose. Verse indicators can be shown or hidden in the Inline format settings.                             | `"&lt;sup&gt;16&lt;/sup&gt; Rejoice always." ([[path\|1 Thessalonians 5:16 - ESV]])`             |
 | any other text, `niv` | Any other text besides the options listed above will be treated as a version code.                                                                | ![localBibleRef7](https://github.com/user-attachments/assets/a7c75752-6572-482d-a807-c2dc20f1ed28) |
+
+When no passage-format option is supplied, a reference preceded by non-whitespace content on the same line automatically uses Inline format. An explicit passage-format option always takes precedence.
+
+Inline collapses passage line breaks without dropping line-leading bold numbers, and does not add chapter-boundary markers.
 
 ## Bible Markdown Format
 
@@ -73,7 +85,9 @@ Doing things this way allows you to store and reference multiple different versi
 
 <img width="253" height="379" alt="image" src="https://github.com/user-attachments/assets/5804ceab-e69d-4b7f-a58d-3f9b5a89e3fc" />
 
-Beyond that, everything else (section headings, footnotes, links) is optional. Be careful not to add odd characters or extra text in the verses, or they will show up when you reference them. Currently, referencing will ignore YAML frontmatter, headings, chapter numbers (any bolded digits), footnotes and anything after a [horizontal rule](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Horizontal+rule).
+Beyond that, everything else (section headings, footnotes, links) is optional. Be careful not to add odd characters or extra text in the verses, or they will show up when you reference them. Referencing ignores YAML frontmatter, chapter numbers (any bolded digits), footnotes and anything after a [horizontal rule](https://help.obsidian.md/Editing+and+formatting/Basic+formatting+syntax#Horizontal+rule). Markdown verse and section headings are removed by default; disable **Strip section headings** in the plugin settings to retain them in inserted passages.
+
+The heading setting also applies to noncontiguous selections. Retained headings stay on their own line when an ellipsis joins the next selected segment.
 
 Removing a footnote between sentences preserves a separating space: `First.[^note]Next.` becomes `First. Next.`.
 

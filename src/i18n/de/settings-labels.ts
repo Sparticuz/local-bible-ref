@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Abschnitt',
 					[PassageFormat.Quote]: 'Zitat',
 					[PassageFormat.Callout]: 'Callout',
+					[PassageFormat.Inline]: 'Inline',
 				},
 			},
 			bibleFormat: {
@@ -43,6 +44,20 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Vollständige Passage-Vorschau',
 				description:
 					'Ob in der Vorschau der vollständige Text oder nur ein Ausschnitt angezeigt werden soll.',
+			},
+			omissionMarker: {
+				name: 'Auslassungszeichen',
+				description:
+					'Das Zeichen, das zwischen ausgewählten Abschnitten auf ausgelassene Verse hinweist.',
+				options: {
+					[OmissionMarker.None]: 'Keines',
+					[OmissionMarker.Ellipsis]: 'Auslassungspunkte',
+				},
+			},
+			stripHeadings: {
+				name: 'Abschnittsüberschriften entfernen',
+				description:
+					'Ob Vers- und Abschnittsüberschriften aus eingefügten Passagen entfernt werden sollen.',
 			},
 		},
 	},
@@ -88,6 +103,17 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Zusammenklappbar',
 				description:
 					'Ob der für die Passage zu verwendende Hinweis einklappbar ist.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: 'Inline-Format',
+		controls: {
+			showVerseIndicators: {
+				name: 'Versnummern anzeigen',
+				description:
+					'Ob Versnummern in Inline-Bibelstellen angezeigt werden sollen.',
 			},
 		},
 	},

@@ -1,6 +1,6 @@
 import { PassageFormat } from 'src/passage-reference';
 import { SettingsLabels } from '../models';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export const SETTINGS_LABELS: SettingsLabels = {
 	required: {
@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Odstavec',
 					[PassageFormat.Quote]: 'Citovat',
 					[PassageFormat.Callout]: 'Popisek',
+					[PassageFormat.Inline]: 'V textu',
 				},
 			},
 			bibleFormat: {
@@ -43,6 +44,20 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Náhled celé pasáže',
 				description:
 					'Zda se v náhledu má zobrazit celá pasáž, a ne jen její úryvek.',
+			},
+			omissionMarker: {
+				name: 'Značka vynechání',
+				description:
+					'Značka vložená mezi vybrané úseky, kde byly vynechány verše.',
+				options: {
+					[OmissionMarker.None]: 'Žádná',
+					[OmissionMarker.Ellipsis]: 'Výpustka',
+				},
+			},
+			stripHeadings: {
+				name: 'Odstranit nadpisy oddílů',
+				description:
+					'Zda se mají z vložených pasáží odstranit nadpisy veršů a oddílů.',
 			},
 		},
 	},
@@ -84,6 +99,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Skládací',
 				description:
 					'Zda je popis, který se má pro daný text použít, sbalitelný.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: 'Formát v textu',
+		controls: {
+			showVerseIndicators: {
+				name: 'Zobrazit čísla veršů',
+				description: 'Zda se mají v pasážích v textu zobrazovat čísla veršů.',
 			},
 		},
 	},

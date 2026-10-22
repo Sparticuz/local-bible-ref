@@ -1,5 +1,5 @@
 import { PassageFormat } from 'src/passage-reference';
-import { QuoteReferencePosition } from 'src/settings';
+import { OmissionMarker, QuoteReferencePosition } from 'src/settings';
 
 export interface Book {
 	id: string;
@@ -30,10 +30,18 @@ export interface SettingsLabels {
 					[PassageFormat.Paragraph]: string;
 					[PassageFormat.Quote]: string;
 					[PassageFormat.Callout]: string;
+					[PassageFormat.Inline]: string;
 				};
 			};
 			bibleFormat: Control;
 			fullPreview: Control;
+			omissionMarker: Control & {
+				options: {
+					[OmissionMarker.None]: string;
+					[OmissionMarker.Ellipsis]: string;
+				};
+			};
+			stripHeadings: Control;
 		};
 	};
 
@@ -57,6 +65,13 @@ export interface SettingsLabels {
 			calloutType: Control;
 			linkToPassage: Control;
 			collapsible: Control;
+		};
+	};
+
+	inlineFormat: {
+		name: string;
+		controls: {
+			showVerseIndicators: Control;
 		};
 	};
 

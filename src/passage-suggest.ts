@@ -13,7 +13,10 @@ import {
 } from 'obsidian';
 import { BibleFormat } from './local-bible-ref-setting-tab';
 import PassageReference, { PassageFormat } from './passage-reference';
-import LocalBibleRefSettings, { QuoteReferencePosition } from './settings';
+import LocalBibleRefSettings, {
+	OmissionMarker,
+	QuoteReferencePosition,
+} from './settings';
 import { I18N } from './i18n';
 
 export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
@@ -48,9 +51,10 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		editor: Editor,
 		_: TFile | null
 	): EditorSuggestTriggerInfo | null {
-		// line must start with '--'
-		const line = editor.getLine(cursor.line);
-		if (!line.startsWith('--')) return null;
+		const line = editor.getLine(cursor.line).slice(0, cursor.ch);
+		const match = line.match(PassageReference.regExp);
+		if (!match) return null;
+		const referenceStart = match.index ?? 0;
 
 		// if no settings, alert user
 		if (!this.settings.biblesPath) {
@@ -63,18 +67,14 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		// min ref length is 5 ('--ex1')
-		if (cursor.ch < 5) return null;
-
-		// must be a passage ref
-		const isPassage = PassageReference.regExp.test(line);
-		if (!isPassage) return null;
+		if (cursor.ch - referenceStart < 5) return null;
 
 		// trigger info
 		return {
 			end: cursor,
 			query: line,
 			start: {
-				ch: 0,
+				ch: referenceStart,
 				line: cursor.line,
 			},
 		};
@@ -100,20 +100,90 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		// grab all chapters in the range
 		let texts = await this.getChapterTexts(passageRef);
 		if (!texts) return [];
+		const useFullChapterReference = this.isFullChapterRange(
+			passageRef,
+			texts[0]
+		);
 
-		// split first chapter by start verse
-		const textFromVerse = this.getTextFromStartVerse(texts[0], passageRef);
-		if (!textFromVerse) return [];
-		texts[0] = textFromVerse;
+		if (passageRef.verseSegments.length > 0) {
+			let selectionText = '';
+			for (let i = 0; i < passageRef.verseSegments.length; i++) {
+				const segment = passageRef.verseSegments[i];
+				const selectedSegment = this.getTextForVerseRange(
+					texts[0],
+					segment.startVerse,
+					segment.endVerse,
+					true
+				);
+				if (!selectedSegment) return [];
+				const normalizedSegment =
+					this.settings.bibleFormat === BibleFormat.BibleLinker
+						? this.formatBibleLinkerVerses(selectedSegment)
+						: selectedSegment;
 
-		// split last chapter by end verse
-		const lastIndex = texts.length - 1;
-		const textToVerse = this.getTextToEndVerse(texts[lastIndex], passageRef);
-		if (!textToVerse) return [];
-		texts[lastIndex] = textToVerse;
+				// A range ends immediately before the next verse marker, so it can
+				// retain a heading that introduces that next, unselected verse.
+				// Strip headings before joining so a trailing heading cannot consume
+				// the ellipsis and next verse during final cleanup.
+				const segmentText = (
+					this.settings.stripHeadings
+						? this.removeHeadings(normalizedSegment)
+						: normalizedSegment
+				).trimStart();
+
+				let usesEllipsis = false;
+				if (i > 0) {
+					const previousSegment = passageRef.verseSegments[i - 1];
+					const hasOmittedVerse =
+						segment.startVerse > previousSegment.endVerse + 1;
+					usesEllipsis =
+						hasOmittedVerse &&
+						this.settings.omissionMarker === OmissionMarker.Ellipsis;
+					if (usesEllipsis) {
+						if (
+							!this.settings.stripHeadings &&
+							/(?:^|\n)#.*$/.test(selectionText)
+						)
+							selectionText += '\n';
+						const beginsOnNewLine = /(?:\r?\n)+$/.test(selectionText);
+						const markdownPrefix = beginsOnNewLine
+							? (segmentText.match(/^(?:[>-] )+/)?.[0] ?? '')
+							: '';
+						selectionText += beginsOnNewLine ? `${markdownPrefix}… ` : ' … ';
+					} else {
+						selectionText += '\n';
+					}
+				}
+
+				selectionText += usesEllipsis
+					? segmentText.replace(/^(?:[>-] )+/, '')
+					: segmentText;
+			}
+			texts = [selectionText];
+		} else {
+			const lastIndex = texts.length - 1;
+			const firstText = this.getTextForVerseRange(
+				texts[0],
+				passageRef.startVerse,
+				lastIndex === 0 ? passageRef.endVerse : undefined
+			);
+			if (!firstText) return [];
+			texts[0] = firstText;
+
+			if (lastIndex > 0) {
+				const lastText = this.getTextForVerseRange(
+					texts[lastIndex],
+					undefined,
+					passageRef.endVerse
+				);
+				if (!lastText) return [];
+				texts[lastIndex] = lastText;
+			}
+		}
 
 		// clean up chapter texts
-		const multipleChapters = texts.length > 1;
+		const multipleChapters =
+			texts.length > 1 && passageRef.format !== PassageFormat.Inline;
 		texts = texts.map((text, i) => {
 			const chapterNumber = passageRef.startChapter + i;
 			return this.cleanText(text, chapterNumber, multipleChapters);
@@ -122,8 +192,13 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		// suggest
 		const fullText = texts.join('\n\n');
 		const excerpt = this.generateExcerpt(fullText);
-		const text = this.formatTexts(texts, passageRef, context);
-		return [{ excerpt, text }];
+		const text = this.formatTexts(
+			texts,
+			passageRef,
+			context,
+			useFullChapterReference
+		);
+		return [{ excerpt, text, format: passageRef.format }];
 	}
 
 	renderSuggestion(item: PassageSuggestion, el: HTMLElement): void {
@@ -135,11 +210,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		_: MouseEvent | KeyboardEvent
 	): void {
 		if (!this.context) return;
-		this.context.editor.replaceRange(
-			item.text,
-			this.context.start,
-			this.context.end
-		);
+
+		let start = this.context.start;
+		if (item.format === PassageFormat.Inline && start.ch > 0) {
+			const precedingText = this.context.editor
+				.getLine(start.line)
+				.slice(0, start.ch);
+			if (precedingText.trim().length === 0) start = { ...start, ch: 0 };
+		}
+
+		this.context.editor.replaceRange(item.text, start, this.context.end);
 	}
 
 	/** Retrieves the texts of the chapters within a passage ref. */
@@ -175,18 +255,70 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		return texts;
 	}
 
+	/** Extracts an optional verse range from one chapter. */
+	private getTextForVerseRange(
+		text: string,
+		startVerse?: number,
+		endVerse?: number,
+		validateEveryVerse = false
+	): string | null {
+		if (endVerse !== undefined && endVerse !== -1) {
+			const firstVerse = validateEveryVerse ? startVerse ?? endVerse : endVerse;
+			for (let verse = firstVerse; verse <= endVerse; verse++) {
+				if (!this.getTextFromStartVerse(text, verse)) return null;
+			}
+		}
+
+		let selectedText = text;
+		if (startVerse !== undefined) {
+			const textFromVerse = this.getTextFromStartVerse(
+				selectedText,
+				startVerse
+			);
+			if (!textFromVerse) return null;
+			selectedText = textFromVerse;
+		}
+		if (endVerse !== undefined) {
+			const textToVerse = this.getTextToEndVerse(selectedText, endVerse);
+			if (!textToVerse) return null;
+			selectedText = textToVerse;
+		}
+		return selectedText;
+	}
+
+	/** Whether an explicit verse range covers every verse in one chapter. */
+	private isFullChapterRange(ref: PassageReference, text: string): boolean {
+		if (
+			ref.startChapter !== ref.endChapter ||
+			ref.verseSegments.length > 1 ||
+			ref.startVerse !== 1 ||
+			ref.endVerse === -1 ||
+			!this.getTextFromStartVerse(text, ref.endVerse)
+		)
+			return false;
+
+		const versePattern =
+			this.settings.bibleFormat === BibleFormat.BibleLinker
+				? /^#{1,6} [a-zA-Z]*(\d{1,3})[a-zA-Z]*\r?$/gm
+				: /<sup>(\d{1,3})<\/sup>/g;
+		for (const match of this.removeEOF(this.removeBOF(text)).matchAll(versePattern)) {
+			if (+match[1] > ref.endVerse) return false;
+		}
+		return true;
+	}
+
 	/** Extracts the text in the chapter from the start verse to the end. */
 	private getTextFromStartVerse(
 		text: string,
-		ref: PassageReference
+		startVerse: number
 	): string | null {
 		let pattern = '';
 		if (this.settings.bibleFormat === BibleFormat.BibleLinker) {
-			pattern = `#{1,6} [a-zA-Z]*${ref.startVerse}[a-zA-Z]*\\n\\w+`;
+			pattern = `#{1,6} [a-zA-Z]*${startVerse}[a-zA-Z]*\\n\\w+`;
 		} else {
 			const quoteOrList = '(?:[>-] )*';
 			const chapterNum = '(?:\\*\\*\\d{1,3}\\*\\* )?';
-			const verseNum = `<sup>${ref.startVerse}</sup>`;
+			const verseNum = `<sup>${startVerse}</sup>`;
 			pattern = quoteOrList + chapterNum + verseNum;
 		}
 
@@ -200,11 +332,8 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	}
 
 	/** Extracts the text in the chapter from the start to the end verse. */
-	private getTextToEndVerse(
-		text: string,
-		ref: PassageReference
-	): string | null {
-		if (ref.endVerse === -1) return text;
+	private getTextToEndVerse(text: string, endVerse: number): string | null {
+		if (endVerse === -1) return text;
 
 		let pattern = '';
 		if (this.settings.bibleFormat === BibleFormat.BibleLinker) {
@@ -217,7 +346,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 		const regex = new RegExp(pattern, 'g');
 		for (const match of text.matchAll(regex)) {
-			if (+match[1] > ref.endVerse) return text.slice(0, match.index).trim();
+			if (+match[1] > endVerse) return text.slice(0, match.index).trim();
 		}
 		return text.trim();
 	}
@@ -232,7 +361,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 		}
 
 		text = this.removeChapterNumbers(text);
-		text = this.removeHeadings(text);
+		if (this.settings.stripHeadings) text = this.removeHeadings(text);
 		text = this.removeFootnoteRefs(text);
 		text = this.removeBOF(text);
 		text = this.removeEOF(text);
@@ -335,7 +464,8 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	private formatTexts(
 		texts: string[],
 		passageRef: PassageReference,
-		context: EditorSuggestContext
+		context: EditorSuggestContext,
+		useFullChapterReference: boolean
 	): string {
 		let formatted = '';
 		switch (passageRef.format) {
@@ -358,8 +488,15 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 				let stringRef = '';
 				if (includeReference) {
 					if (linkToPassage)
-						stringRef = this.generatePassageLink(passageRef, context);
-					else stringRef = passageRef.stringify();
+						stringRef = this.generatePassageLink(
+							passageRef,
+							context,
+							useFullChapterReference
+						);
+					else
+						stringRef = useFullChapterReference
+							? passageRef.stringifyFullChapter()
+							: passageRef.stringify();
 					if (referencePosition === QuoteReferencePosition.Beginning)
 						stringRef += '\n';
 					else stringRef = `\n> ${stringRef}`;
@@ -380,13 +517,35 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 
 				let stringRef = '';
 				if (linkToPassage)
-					stringRef = this.generatePassageLink(passageRef, context);
-				else stringRef = passageRef.stringify();
+					stringRef = this.generatePassageLink(
+						passageRef,
+						context,
+						useFullChapterReference
+					);
+				else
+					stringRef = useFullChapterReference
+						? passageRef.stringifyFullChapter()
+						: passageRef.stringify();
 
 				formatted = `> [!${type}]${collapsible ? '+' : ''} ${stringRef}\n`;
 				formatted += texts.join('\n\n').trim();
 				formatted = formatted.replace(/\n/gm, '\n> ');
 				formatted += '\n\n';
+				break;
+			}
+			case PassageFormat.Inline: {
+				formatted = texts.join('\n').trim();
+				formatted = formatted.replace(/^(?:> |- )+/gm, '');
+
+				formatted = formatted.replace(/[ \t]*\r?\n+[ \t]*/g, ' ');
+				if (!this.settings.inline.showVerseIndicators)
+					formatted = formatted.replace(/<sup>\d{1,3}<\/sup>\s*/g, '');
+				const sourceReference = this.generatePassageLink(
+					passageRef,
+					context,
+					useFullChapterReference
+				);
+				formatted = `"${formatted}" (${sourceReference})`;
 				break;
 			}
 		}
@@ -397,12 +556,16 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 	/** Generates a link to the passage within the vault. */
 	private generatePassageLink(
 		ref: PassageReference,
-		context: EditorSuggestContext
+		context: EditorSuggestContext,
+		useFullChapterReference: boolean
 	): string {
 		const { version, book, startChapter, startVerse } = ref;
 		const path = `${this.settings.biblesPath}/${version}/${book.name}/${book.name} ${startChapter}.md`;
 		const file = this.app.vault.getFileByPath(normalizePath(path));
-		if (!file) return ref.stringify();
+		const displayReference = useFullChapterReference
+			? ref.stringifyFullChapter()
+			: ref.stringify();
+		if (!file) return displayReference;
 
 		return this.app.fileManager.generateMarkdownLink(
 			file,
@@ -410,7 +573,7 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 			this.settings.bibleFormat === BibleFormat.BibleLinker
 				? `#${startVerse}`
 				: undefined,
-			ref.stringify()
+			displayReference
 		);
 	}
 }
@@ -418,4 +581,5 @@ export default class PassageSuggest extends EditorSuggest<PassageSuggestion> {
 interface PassageSuggestion {
 	excerpt: string;
 	text: string;
+	format: PassageFormat;
 }

@@ -6,6 +6,7 @@ import { PassageFormat } from 'src/passage-reference';
 import PassageSuggest from 'src/passage-suggest';
 import LocalBibleRefSettings, {
 	CalloutType,
+	OmissionMarker,
 	QuoteReferencePosition,
 } from 'src/settings';
 
@@ -35,18 +36,28 @@ export default class LocalBibleRefPlugin extends Plugin {
 			collapsible: true,
 		};
 
+		const inlineSettings = {
+			showVerseIndicators: true,
+		};
+
 		this.settings ??= {
 			biblesPath: '',
 			defaultVersionShorthand: '',
 			defaultPassageFormat: PassageFormat.Callout,
 			bibleFormat: BibleFormat.LocalBibleRef,
 			fullPreview: false,
+			omissionMarker: OmissionMarker.None,
+			stripHeadings: true,
 			quote: quoteSettings,
 			callout: calloutSettings,
+			inline: inlineSettings,
 		};
 
+		this.settings.omissionMarker ??= OmissionMarker.None;
+		this.settings.stripHeadings ??= true;
 		if (!this.settings.quote) this.settings.quote = quoteSettings;
 		if (!this.settings.callout) this.settings.callout = calloutSettings;
+		if (!this.settings.inline) this.settings.inline = inlineSettings;
 
 		await this.saveSettings();
 	}
