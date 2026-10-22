@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Odstavec',
 					[PassageFormat.Quote]: 'Citovat',
 					[PassageFormat.Callout]: 'Popisek',
+					[PassageFormat.Inline]: 'V textu',
 				},
 			},
 			bibleFormat: {
@@ -84,6 +85,16 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Skládací',
 				description:
 					'Zda je popis, který se má pro daný text použít, sbalitelný.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: 'Formát v textu',
+		controls: {
+			showVerseIndicators: {
+				name: 'Zobrazit čísla veršů',
+				description: 'Zda se mají v pasážích v textu zobrazovat čísla veršů.',
 			},
 		},
 	},

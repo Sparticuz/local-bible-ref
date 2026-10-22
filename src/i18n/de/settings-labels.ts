@@ -32,6 +32,7 @@ export const SETTINGS_LABELS: SettingsLabels = {
 					[PassageFormat.Paragraph]: 'Abschnitt',
 					[PassageFormat.Quote]: 'Zitat',
 					[PassageFormat.Callout]: 'Callout',
+					[PassageFormat.Inline]: 'Inline',
 				},
 			},
 			bibleFormat: {
@@ -88,6 +89,17 @@ export const SETTINGS_LABELS: SettingsLabels = {
 				name: 'Zusammenklappbar',
 				description:
 					'Ob der für die Passage zu verwendende Hinweis einklappbar ist.',
+			},
+		},
+	},
+
+	inlineFormat: {
+		name: 'Inline-Format',
+		controls: {
+			showVerseIndicators: {
+				name: 'Versnummern anzeigen',
+				description:
+					'Ob Versnummern in Inline-Bibelstellen angezeigt werden sollen.',
 			},
 		},
 	},

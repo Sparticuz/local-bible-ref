@@ -17,6 +17,9 @@ export default interface LocalBibleRefSettings {
 		linkToPassage: boolean;
 		collapsible: boolean;
 	};
+	inline: {
+		showVerseIndicators: boolean;
+	};
 }
 
 export enum QuoteReferencePosition {
