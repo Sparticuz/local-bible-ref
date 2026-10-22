@@ -26,6 +26,7 @@ In order to fetch a Bible passage, simply type in a Bible reference prefixed wit
 
 - Single verse: `--gen1:1`
 - Multi verse: `--gen1:1-3`
+- Noncontiguous verses and ranges: `--gen1:1,3-5,8`
 - Single chapter: `--gen1`
 - Multi chapter: `--gen1-3`
 - Multi chapter & verse: `--gen1:3-3:9`
@@ -35,6 +36,12 @@ The referencing syntax also allows for a lot of flexibility:
 - Short and full name references: `--gen1` + `--genesis1`
 - Lowercase, uppercase and mixed-case references: `--gEnEsis1`
 - Spacing (not more than a single space): `-- Genesis 1:1 - 2:2`
+
+Verse ranges stop before the next available verse beyond their endpoint, even when a translation skips a verse number. For example, `--acts8:36` does not include verse 38 when verse 37 is absent.
+
+Comma-separated selections are sorted, deduplicated, and merged where they overlap or touch. Every verse explicitly requested by a list must exist, including verses inside its ranges; otherwise no suggestion is shown. Ordinary contiguous ranges retain compatibility with translations that omit verse numbers.
+
+Selections support both Local Bible Ref and Bible Linker chapter files. Set **Omission marker** to **Ellipsis** to show `…` between nonadjacent segments, or leave it at **None** to insert no marker.
 
 ### Options
 

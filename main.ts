@@ -6,6 +6,7 @@ import { PassageFormat } from 'src/passage-reference';
 import PassageSuggest from 'src/passage-suggest';
 import LocalBibleRefSettings, {
 	CalloutType,
+	OmissionMarker,
 	QuoteReferencePosition,
 } from 'src/settings';
 
@@ -41,10 +42,12 @@ export default class LocalBibleRefPlugin extends Plugin {
 			defaultPassageFormat: PassageFormat.Callout,
 			bibleFormat: BibleFormat.LocalBibleRef,
 			fullPreview: false,
+			omissionMarker: OmissionMarker.None,
 			quote: quoteSettings,
 			callout: calloutSettings,
 		};
 
+		this.settings.omissionMarker ??= OmissionMarker.None;
 		if (!this.settings.quote) this.settings.quote = quoteSettings;
 		if (!this.settings.callout) this.settings.callout = calloutSettings;
 
