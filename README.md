@@ -36,6 +36,8 @@ The referencing syntax also allows for a lot of flexibility:
 - Lowercase, uppercase and mixed-case references: `--gEnEsis1`
 - Spacing (not more than a single space): `-- Genesis 1:1 - 2:2`
 
+An explicit range covering every available verse in one chapter uses a chapter-only source reference. For example, `--gen1:1-31+quote` displays `Genesis 1 - <version>` when verse 31 is the chapter's final verse. Partial ranges keep their verse labels, including when verse numbers have gaps.
+
 ### Options
 
 _Local Bible Ref_ also allows you to provide a few options to a reference to specify which version you would like to use as well as what markdown format to use. Add an option to a reference by adding a `+` followed by the option (in any order): `--gen1:1-5+esv`
